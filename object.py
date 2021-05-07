@@ -10,6 +10,12 @@ class Grid:
 
     Attributes
     ----------
+    x : int
+        | horizontal location of the grid.
+    y : int
+        | vertical location of the grid.
+    z : int
+        | depth of the grid.
     '''
 
     def __init__(self, x, y, z):
@@ -23,6 +29,13 @@ class Grid:
 class Activity:
     '''
     A class of an individual construction activity.
+
+    Attribute
+    ---------
+    name : str
+        | An activity name.
+    productivity : int
+        | The predetermined number of enable works of the activity.
     '''
 
     def __init__(self, name, productivity):
