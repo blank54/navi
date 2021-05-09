@@ -5,15 +5,6 @@
 import os
 import pandas as pd
 
-from config import Config
-with open('/data/blank54/workspace/project/navi/navi.cfg', 'r') as f:
-    cfg = Config(f)
-
-
-class MyPath:
-    activity_list = os.path.join(cfg['root'], cfg['fdir_template'], 'activity_list.xlsx')
-    productivity_list = os.path.join(cfg['root'], cfg['fdir_template'], 'productivity_list.xlsx')
-
 
 class Grid:
     '''
@@ -37,12 +28,12 @@ class Grid:
         self.location_3d = tuple(self.x, self.y, self.z)
 
 
-class Activity():
+class Activity:
     '''
     A class of an individual construction activity.
 
-    Attribute
-    ---------
+    Attributes
+    ----------
     code : str
         | An unique code that represents the activity.
     name : str
@@ -55,3 +46,36 @@ class Activity():
         self.code = code
         self.name = name
         self.productivity = productivity
+
+    def __str__(self):
+        return self.name
+
+
+class Work:
+    '''
+    A class to represent an activity on a grid.
+
+    Attributes
+    '''
+
+    def __init__(self, grid, activity, day):
+        self.grid = grid
+        self.activity = activity
+        self.day = day
+
+
+class Project:
+    '''
+    A class to represent the whole construction project that consists of several works.
+    '''
+
+    def __init__(self, works):
+        self.works = works
+        self.grids = list(self.works.keys())
+
+    def __iter__(self):
+        for work in self.works:
+            yield work
+
+    def __call__(self):
+        return self.works
