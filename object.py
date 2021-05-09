@@ -79,3 +79,14 @@ class Project:
 
     def __call__(self):
         return self.works
+
+    # def check_sequence_consistency(self):
+
+
+## TODO: a kind of tree structure.
+class ActivityTree:
+    def __init__(self, sequences):
+        self.sequences = sequences
+        
+    def order(self, activity1, activity2):
+        return None # Return preceding activity

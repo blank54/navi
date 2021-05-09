@@ -18,5 +18,6 @@ class NaviPath:
 
     activity2code = os.path.join(fdir_objects, 'activity2code.json')
     activity2productivity = os.path.join(fdir_objects, 'activity2productivity.json')
+    activity_tree = os.path.join(fdir_objects, 'activity_tree.pk')
 
     case_01 = os.path.join(fdir_data, 'case_01.xlsx')

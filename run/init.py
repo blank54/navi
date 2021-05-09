@@ -13,6 +13,7 @@ from collections import defaultdict
 
 import sys
 sys.path.append('/data/blank54/workspace/project/navi/')
+from object import ActivityTree
 from naviutil import NaviPath
 navipath = NaviPath()
 
@@ -33,7 +34,21 @@ def build_activity2productivity():
     with open(navipath.activity2productivity, 'w', encoding='utf-8') as f:
         json.dump(activity2productivity, f)
 
+## TODO: a kind of tree structure.
+def build_activity_tree():
+    sequences = defaultdict(dict)
+    for idx, record in pd.read_excel(navipath.activity_sequence).iterrows():
+        precede = record['precede']
+        follow = record['follow']
+
+        sequences[precede][follow] = precede
+        sequences[follow][precede] = precede
+
+    activity_tree = ActivityTree(sequences=sequences)
+    with open(navipath.activity_tree, 'wb') as f:
+        pk.dump(activity_tree, f)
 
 if __name__ == '__main__':
     build_activity2code()
     build_activity2productivity()
+    build_activity_tree()
