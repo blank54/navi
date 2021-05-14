@@ -13,7 +13,7 @@ from collections import defaultdict
 
 import sys
 sys.path.append('/data/blank54/workspace/project/navi/')
-from object import Work, Project
+from object import Work, Grid, Project
 from naviutil import NaviPath
 navipath = NaviPath()
 
@@ -26,42 +26,36 @@ def initiate_project():
     case_data = pd.read_excel(navipath.case_01)
     activity_tree = load_activity_tree()
 
-    current_grid = ''
-    works = defaultdict(list)
+    work_list_on_location = defaultdict(list)
+    current_location = ''
     for idx, line in case_data.iterrows():
-        if current_grid == line['grid']:
-            day += 1
-        else:
-            current_grid = deepcopy(line['grid'])
+        if current_location != line['location']:
+            current_location = deepcopy(line['location'])
             day = 0
+        else:
+            day += 1
 
         name = line['activity_name']
         activity = activity_tree.leaves[name]
-
-        works[current_grid].append(Work(grid=current_grid, activity=activity, day=day))
         
-    return Project(works=works)
+        work = Work(location=current_location, activity=activity, day=day)
+        work_list_on_location[current_location].append(work)
+
+    grids = defaultdict()
+    for location in work_list_on_location.keys():
+        grids[location] = Grid(location=location, works=work_list_on_location[location])
+
+    return Project(grids=grids)
 
 
 if __name__ == '__main__':
     ## Init Project
     project = initiate_project()
-
-
-    ## Compare workday of activities
-    for work in project.works['A1']:
-        print('[{}]: /// {:<5} /// at day {}'.format(work.grid, work.activity.name, work.day))
-
-    for work in project.works['A2']:
-        print('[{}]: /// {:<5} /// at day {}'.format(work.grid, work.activity.name, work.day))
+    project.summary()
 
 
     ## Adjust workdays
-    project.find_critical_grid()
-    project.adjust_one('A2')
-
-    for work in project.works['A1']:
-        print('[{}]: /// {:<5} /// at day {}'.format(work.grid, work.activity.name, work.day))
-
-    for work in project.works['A2']:
-        print('[{}]: /// {:<5} /// at day {}'.format(work.grid, work.activity.name, work.day))
+    project_modi = deepcopy(project)
+    project_modi.adjust_all()
+    project_modi.update()
+    project_modi.summary()
