@@ -71,7 +71,7 @@ class ActivityTree:
     ----------
     leaves : list
         | A list of Activities.
-        
+
     Methods
     -------
     check
@@ -114,27 +114,29 @@ class Work:
         self.day = day
 
 
-class Grid:
+class Location:
     '''
-    A class that represents a single grid.
+    A class that represents a single location.
 
     Attributes
     ----------
     x : int
-        | horizontal location of the grid.
+        | horizontal location of the location.
     y : int
-        | vertical location of the grid.
+        | vertical location of the location.
     z : int
-        | depth of the grid.
+        | depth of the location.
     '''
 
-    # def __init__(self, x, y, z):
-    #     self.x = x
-    #     self.y = y
-    #     self.z = z # floor information
-    #     self.location_2d = tuple(self.x, self.y)
-    #     self.location_3d = tuple(self.x, self.y, self.z)
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z # floor information
+        self.location_2d = tuple(self.x, self.y)
+        self.location_3d = tuple(self.x, self.y, self.z)
 
+
+class Grid:
     def __init__(self, location, works):
         self.location = location
         self.works = works
