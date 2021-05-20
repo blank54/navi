@@ -23,10 +23,20 @@ def set_activity_tree():
     activity_table = pd.read_excel(navipath.activity_table)
     leaves = {}
     for _, line in activity_table.iterrows():
-        name = line['name']
+        category = line['category']
+        major = line['major_activity']
+        minor = line['minor_activity']
         code = line['code']
         prod = line['productivity']
-        leaves[name] = Activity(name=name, code=code, prod=prod)
+
+        parameters = {
+            'category': category,
+            'major': major,
+            'minor': minor,
+            'code': code,
+            'prod': prod,
+        }
+        leaves[code] = Activity(parameters=parameters)
 
     return ActivityTree(leaves=leaves)
 
@@ -35,22 +45,39 @@ def save_activity_tree(tree):
         pk.dump(tree, f)
 
     print('Save ActivityTree:')
-    print('  | /// {} ///'.format(navipath.activity_tree))
+    print('  | FilePath: {}'.format(navipath.activity_tree))
+    print('  | # of Activities: {}'.format(len(tree)))
 
 def set_activity_order(tree):
     activity_order = pd.read_excel(navipath.activity_order)
+    key_errors = []
     for _, line in activity_order.iterrows():
-        previous_name = line['previous']
-        next_name = line['next']
+        predecessor_code = line['predecessor']
+        successor_code = line['successor']
 
-        previous_activity = deepcopy(tree.leaves[previous_name])
-        next_activity = deepcopy(tree.leaves[next_name])
+        try:
+            predecessor_activity = deepcopy(tree.leaves[predecessor_code])
+        except KeyError:
+            key_errors.append(predecessor_code)
+            continue
+        try:
+            successor_activity = deepcopy(tree.leaves[successor_code])
+        except KeyError:
+            key_errors.append(successor_code)
+            continue
 
-        previous_activity.add_next(next_activity)
-        next_activity.add_previous(previous_activity)
+        predecessor_activity.add_successor(successor_activity)
+        successor_activity.add_predecessor(predecessor_activity)
 
-        tree.leaves[previous_name] = previous_activity
-        tree.leaves[next_name] = next_activity
+        tree.leaves[predecessor_code] = predecessor_activity
+        tree.leaves[successor_code] = successor_activity
+
+    if key_errors:
+        key_errors = list(set(key_errors))
+        for code in key_errors:
+            print('Absent in ActivityTable: {}'.format(code))
+    else:
+        pass
 
     return tree
 

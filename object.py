@@ -6,6 +6,11 @@ import pandas as pd
 from copy import deepcopy
 from collections import defaultdict
 
+import sys
+sys.path.append('/data/blank54/workspace/project/navi/')
+from naviutil import NaviPath
+navipath = NaviPath()
+
 
 class Activity:
     '''
@@ -15,41 +20,49 @@ class Activity:
     ----------
     code : str
         | An unique code that represents the activity.
-    name : str
-        | An activity name.
+    category : str
+        | Category name of the activity.
+    major : str
+        | Major activity name. (i.e., work package)
+    minor : str
+        | Minor activity name.
     prod : int
         | The predetermined number of enable works (i.e., productivity) of the activity.
-    previous : list
+    predecessor : list
         | A list of activities that should be done before the current activity.
-    next : list
+    successor : list
         | A list of activities that should be done after the current activity.
 
     Methods
     -------
-    add_previous
-        | Add an activity on the "previous" list.
-    add_next
-        | Add an activity on the "next" list.
+    add_predecessor
+        | Add an activity on the "predecessor" list.
+    add_successor
+        | Add an activity on the "successor" list.
     '''
 
-    def __init__(self, name, code, prod):
-        self.name = name
-        self.code = code
-        self.prod = prod
+    def __init__(self, parameters):
+        self.code = parameters.get('code', 'NA')
 
-        self.previous = []
-        self.next = []
+        self.category = parameters.get('category', 'NA')
+        self.major = parameters.get('major', 'NA')
+        self.minor = parameters.get('minor', 'NA')
+        
+        self.prod = parameters.get('productivity', 'NA')
+
+        self.predecessor = []
+        self.successor = []
 
     def __str__(self):
-        return self.name
+        return '{}: {}'.format(self.code, self.minor)
 
-    def add_previous(self, activity):
-        self.previous.append(activity)
-        self.previous = list(set(self.previous))
+    def add_predecessor(self, activity):
+        self.predecessor.append(activity)
+        self.predecessor = list(set(self.predecessor))
 
-    def add_next(self, activity):
-        self.next.append(activity)
-        self.next = list(set(self.next))
+    def add_successor(self, activity):
+        self.successor.append(activity)
+        self.successor = list(set(self.successor))
 
 
 class ActivityTree:
@@ -64,6 +77,9 @@ class ActivityTree:
 
     def __init__(self, leaves):
         self.leaves = leaves
+
+    def __len__(self):
+        return len(self.leaves)
 
     def check(self):
         return None
