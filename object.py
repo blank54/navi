@@ -210,6 +210,7 @@ class Project:
         self.__update_critical_grids()
         self.__update_schedule()
 
+    ## TODO
     def adjust_one(self, location):
         for w2 in self.grids[location]:
             for critical_grid in self.critical_grids:
