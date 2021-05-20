@@ -67,6 +67,11 @@ class Activity:
 
 class ActivityTree:
     '''
+    Attributes
+    ----------
+    leaves : list
+        | A list of Activities.
+        
     Methods
     -------
     check
