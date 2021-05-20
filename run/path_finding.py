@@ -6,6 +6,7 @@ A sourcecode to run the program and find the optimized schedule for the construc
 '''
 
 # Configuration
+import os
 import pickle as pk
 import pandas as pd
 from copy import deepcopy
@@ -25,25 +26,31 @@ def load_activity_tree():
 def initiate_project():
     case_data = pd.read_excel(navipath.case_01)
     activity_tree = load_activity_tree()
+    grids = defaultdict(Grid)
 
-    work_list_on_location = defaultdict(list)
-    current_location = ''
     for idx, line in case_data.iterrows():
-        if current_location != line['location']:
-            current_location = deepcopy(line['location'])
-            day = 0
+        x = int(line['x'])
+        y = int(line['y'])
+        z = int(line['z'])
+        location = '{}_{}_{}'.format(x, y, z)
+        grid = Grid(location=location)
+
+        try:
+            code = line['code']
+            activity = activity_tree.leaves[code]
+        except KeyError:
+            continue
+
+        if location in grids:
+            grid = grids[location]
+            today = grid.last_day+1
         else:
-            day += 1
+            grid = Grid(location=location)
+            today = 0
 
-        name = line['activity_name']
-        activity = activity_tree.leaves[name]
-        
-        work = Work(location=current_location, activity=activity, day=day)
-        work_list_on_location[current_location].append(work)
-
-    grids = defaultdict()
-    for location in work_list_on_location.keys():
-        grids[location] = Grid(location=location, works=work_list_on_location[location])
+        grid.works.append(Work(activity=activity, day=today))
+        grid.update()
+        grids[location] = grid
 
     return Project(grids=grids)
 
@@ -52,6 +59,9 @@ if __name__ == '__main__':
     ## Init Project
     project = initiate_project()
     project.summary()
+    project.export(fpath=navipath.case_01_proj)
+
+
 
 
     ## Adjust workdays
@@ -59,3 +69,4 @@ if __name__ == '__main__':
     project_modi.adjust_all()
     project_modi.update()
     project_modi.summary()
+    project.export(fpath=os.path.join(navipath.fdir_data, 'case_01_proj_modi.xlsx'))

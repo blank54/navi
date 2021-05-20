@@ -6,11 +6,6 @@ import pandas as pd
 from copy import deepcopy
 from collections import defaultdict
 
-import sys
-sys.path.append('/data/blank54/workspace/project/navi/')
-from naviutil import NaviPath
-navipath = NaviPath()
-
 
 class Activity:
     '''
@@ -99,49 +94,50 @@ class Work:
 
     Attributes
     ----------
-    grid : str
-        | A grid name (e.g., "A1", "A2", ...)
-        | TODO: The Grid class will be used in the future.
     activity : Activity
         | The Activity class.
     day : int
         | The work day from the beginning.
     '''
 
-    def __init__(self, location, activity, day):
-        self.location = location
+    def __init__(self, activity, day):
         self.activity = activity
         self.day = day
 
 
-class Location:
+class Grid:
     '''
     A class that represents a single location.
 
     Attributes
     ----------
     x : int
-        | horizontal location of the location.
+        | Horizontal location of the location.
     y : int
-        | vertical location of the location.
+        | Vertical location of the location.
     z : int
-        | depth of the location.
+        | Depth of the location.
+    location_2d : tuple
+        | 2-dimensional location of a grid.
+    location_3d : tuple
+        | 3-dimensional location of a grid.
+    works : list
+        | A list of Work that is conducted on the grid.
+    last_day : int
+        | The last working day of works.
+    duration : int
+        | Total working day on the grid.
     '''
 
-    def __init__(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z # floor information
-        self.location_2d = tuple(self.x, self.y)
-        self.location_3d = tuple(self.x, self.y, self.z)
+    def __init__(self, location):
+        self.x, self.y, self.z = [int(l) for l in location.split('_')]
+        self.location_2d = tuple((self.x, self.y))
+        self.location_3d = tuple((self.x, self.y, self.z))
 
+        self.works = []
 
-class Grid:
-    def __init__(self, location, works):
-        self.location = location
-        self.works = works
-
-        self.duration = max([w.day for w in self.works])+1 # The working day starts with 0
+        self.last_day = ''
+        self.duration = ''
 
     def __len__(self):
         return len(self.works)
@@ -149,6 +145,10 @@ class Grid:
     def __iter__(self):
         for work in self.works:
             yield work
+
+    def update(self):
+        self.last_day = max([w.day for w in self.works], default=0)
+        self.duration = self.last_day+1 # The working day starts with 0
 
     ## TODO
     # def delay_from_here(self, day)
@@ -160,11 +160,8 @@ class Project:
 
     Attributes
     ----------
-    works : dict
-        | A dict of works whose key is a grid.
     grids : list
-        | A list of grid names.
-        | TODO: The Grid class will be used in the future.
+        | A list of grids.
     critical_grids : list
         | The grids whose workday is the longest.
 
@@ -180,7 +177,6 @@ class Project:
 
     def __init__(self, grids):
         self.grids = grids
-        self.grid_list = list(self.grids.keys())
 
         self.duration = None
         self.critical_grids = None
@@ -204,10 +200,10 @@ class Project:
             for loc, grid in self.grids.items():
                 try:
                     work_today = [w for w in grid if w.day == day][0]
-                    schedule[day].append('{:>5}'.format(work_today.activity.name))
+                    schedule[day].append('{:>10}'.format(work_today.activity.code))
                 except IndexError:
-                    schedule[day].append('{:>5}'.format(''))
-        self.schedule = pd.DataFrame(schedule, index=self.grid_list)
+                    schedule[day].append('{:>10}'.format(''))
+        self.schedule = pd.DataFrame(schedule, index=list(self.grids.keys()))
 
     def update(self):
         self.__update_duration()
@@ -220,7 +216,7 @@ class Project:
                 for w1 in self.grids[location]:
 
                     # Same activity with critical grid --> work in the same day
-                    if w1.activity.name == w2.activity.name:
+                    if w1.activity.code == w2.activity.code:
                         if w2.day < w1.day:
                             w2.day = deepcopy(w1.day)
 
@@ -236,3 +232,6 @@ class Project:
         print('Schedule:')
         print(self.schedule)
         print('____________________________________________________________')
+
+    def export(self, fpath):
+        self.schedule.to_excel(fpath, na_rep='', header=True, index=True)
