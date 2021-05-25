@@ -14,4 +14,3 @@ with open(navipath.activity_tree, 'rb') as f:
     tree = pk.load(f)
 
 tree.check_order()
-
