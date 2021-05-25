@@ -66,8 +66,8 @@ def set_activity_order(tree):
             key_errors.append(successor_code)
             continue
 
-        predecessor_activity.add_successor(successor_activity)
-        successor_activity.add_predecessor(predecessor_activity)
+        predecessor_activity.add_successor(successor_activity.code)
+        successor_activity.add_predecessor(predecessor_activity.code)
 
         tree.leaves[predecessor_code] = predecessor_activity
         tree.leaves[successor_code] = successor_activity

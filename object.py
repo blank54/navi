@@ -4,6 +4,7 @@
 # Configuration
 import pandas as pd
 from copy import deepcopy
+from itertools import combinations
 from collections import defaultdict
 
 
@@ -24,16 +25,18 @@ class Activity:
     prod : int
         | The predetermined number of enable works (i.e., productivity) of the activity.
     predecessor : list
-        | A list of activities that should be done before the current activity.
+        | A list of activity codes that should be done before the current activity.
     successor : list
-        | A list of activities that should be done after the current activity.
+        | A list of activity codes that should be done after the current activity.
 
     Methods
     -------
     add_predecessor
-        | Add an activity on the "predecessor" list.
+        | Add an activity code on the "predecessor" list.
     add_successor
-        | Add an activity on the "successor" list.
+        | Add an activity code on the "successor" list.
+    check_order_consistency
+        | Check order consistency between current activity and the input activity code.
     '''
 
     def __init__(self, parameters):
@@ -51,28 +54,71 @@ class Activity:
     def __str__(self):
         return '{}: {}'.format(self.code, self.minor)
 
-    def add_predecessor(self, activity):
-        self.predecessor.append(activity)
+    def add_predecessor(self, activity_code):
+        '''
+        Attributes
+        ----------
+        activity_code : str
+            | A code of predecessor activity.
+        '''
+
+        self.predecessor.append(activity_code)
         self.predecessor = list(set(self.predecessor))
 
-    def add_successor(self, activity):
-        self.successor.append(activity)
+    def add_successor(self, activity_code):
+        '''
+        Attributes
+        ----------
+        activity_code : str
+            | A code of successor activity.
+        '''
+
+        self.successor.append(activity_code)
         self.successor = list(set(self.successor))
+
+    def check_order_consistency(self, activity_code):
+        '''
+        Attributes
+        ----------
+        activity_code : str
+            | An activity code of which order between the current activity is to be checked.
+        '''
+
+        is_predecessor = False
+        is_successor = False
+
+        if activity_code in self.predecessor:
+            is_predecessor = True
+        else:
+            pass
+        if activity_code in self.successor:
+            is_successor = True
+        else:
+            pass
+
+        if all((is_predecessor, is_successor)):
+            return 'CONFLICT'
+        elif any((is_predecessor, is_successor)):
+            return 'FINE'
+        else:
+            return 'ABSENT'
 
 
 class ActivityTree:
     '''
+    A class of activity structure that includes various checking tools of constraints.
+
     Attributes
     ----------
-    leaves : list
-        | A list of Activities.
+    leaves : dict
+        | A dict of Activities of which keys are activity code.
 
     Methods
     -------
-    check
-        | Check the consistency between activity sequences.
-    order
+    __order_bw_activity
         | Return which activity should be done first.
+    check_order
+        | Check the order consistency between activities.
     '''
 
     def __init__(self, leaves):
@@ -80,12 +126,83 @@ class ActivityTree:
 
     def __len__(self):
         return len(self.leaves)
-
-    def check(self):
-        return None
         
-    def order(self, activity1, activity2):
-        return None # activity1, activity2, or irrelevant
+    def __order_bw_activity(self, activity_code1, activity_code2):
+        '''
+        Attributes
+        ----------
+        activity_code1 : str
+            | An activity code to compare the order.
+        activity_code2 : str
+            | Another activity code to compare the order.
+        '''
+
+        activity1 = self.leaves[activity_code1]
+        activity2 = self.leaves[activity_code2]
+
+        consistency1 = activity1.check_order_consistency(activity2.code)
+        consistency2 = activity2.check_order_consistency(activity1.code)
+        STATUS = None
+
+        if all([(consistency1=='FINE'), (consistency2=='FINE')]):
+            STATUS = 'FINE'
+        elif any([(consistency1=='CONFLICT'), (consistency2=='CONFLICT')]):
+            STATUS = 'CONFLICT'
+        else:
+            STATUS = 'IRRELEVANT'
+
+        return STATUS
+
+    def check_order(self, show_irrelevant=False, show_conflict=True, show_error=True):
+        '''
+        Attributes
+        ----------
+        show_irrelevant : bool
+            | To show irrelevant activity pairs. (default : False)
+        show_conflict : bool
+            | To show conflict activity pairs. (default : True)
+        show_error : bool
+            | To show errors in activity pairs. (default : True)
+        '''
+
+        fines = []
+        irrelevants = []
+        conflicts = []
+        errors = []
+
+        pairs = list(combinations(self.leaves.keys(), 2))
+        for activity_code1, activity_code2 in pairs:
+            STATUS = self.__order_bw_activity(activity_code1, activity_code2)
+
+            if STATUS == 'FINE':
+                fines.append((activity_code1, activity_code2))
+            elif STATUS == 'IRRELEVANT':
+                irrelevants.append((activity_code1, activity_code2))
+            elif STATUS == 'CONFLICT':
+                conflicts.append((activity_code1, activity_code2))
+            else:
+                errors.append((activity_code1, activity_code2))
+
+        print('Check orders (total: {:,} activities -> {:,} pairs)'.format(self.__len__(), len(pairs)))
+        print('  | FINE:       {:,} pairs'.format(len(fines)))
+        print('  | IRRELEVANT: {:,} pairs'.format(len(irrelevants)))
+        print('  | CONFLICT:  {:,} pairs'.format(len(conflicts)))
+        print('  | ERROR:     {:,} pairs'.format(len(errors)))
+
+        if show_irrelevant and irrelevants:
+            print('INFO: IRRELEVANT')
+            for irrelevant in irrelevants:
+                print('  | [{}] and [{}]'.format(irrelevant[0], irrelevant[1]))
+
+        if show_conflict and conflicts:
+            print('WARNING: CONFLICT')
+            for conflict in conflicts:
+                print('  | [{}] <-> [{}]'.format(conflict[0], conflict[1]))
+
+        if show_error and errors:
+            print('ERROR:')
+            for error in errors:
+                print('  | [{}] and [{}]'.format(error[0], error[1]))
 
 
 class Work:
