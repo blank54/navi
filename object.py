@@ -104,13 +104,13 @@ class Activity:
             return 'ABSENT'
 
 
-class ActivityTree:
+class NaviSystem:
     '''
-    A class of activity structure that includes various checking tools of constraints.
+    A construction procedure navigation system.
 
     Attributes
     ----------
-    leaves : dict
+    activities : dict
         | A dict of Activities of which keys are activity code.
 
     Methods
@@ -121,11 +121,11 @@ class ActivityTree:
         | Check the order consistency between activities.
     '''
 
-    def __init__(self, leaves):
-        self.leaves = leaves
+    def __init__(self, activities):
+        self.activities = activities
 
     def __len__(self):
-        return len(self.leaves)
+        return len(self.activities)
         
     def __order_bw_activity(self, activity_code1, activity_code2):
         '''
@@ -137,8 +137,8 @@ class ActivityTree:
             | Another activity code to compare the order.
         '''
 
-        activity1 = self.leaves[activity_code1]
-        activity2 = self.leaves[activity_code2]
+        activity1 = self.activities[activity_code1]
+        activity2 = self.activities[activity_code2]
 
         consistency1 = activity1.check_order_consistency(activity2.code)
         consistency2 = activity2.check_order_consistency(activity1.code)
@@ -170,7 +170,7 @@ class ActivityTree:
         conflicts = []
         errors = []
 
-        pairs = list(combinations(self.leaves.keys(), 2))
+        pairs = list(combinations(self.activities.keys(), 2))
         for activity_code1, activity_code2 in pairs:
             STATUS = self.__order_bw_activity(activity_code1, activity_code2)
 
@@ -211,15 +211,18 @@ class Work:
 
     Attributes
     ----------
+    grid : Grid
+        | The grid of the work.
+    day : int
+        | The day of the work.
     activity : Activity
         | The Activity class.
-    day : int
-        | The work day from the beginning.
     '''
 
-    def __init__(self, activity, day):
-        self.activity = activity
+    def __init__(self, grid, day, activity):
+        self.grid = grid
         self.day = day
+        self.activity = activity
 
 
 class Grid:
@@ -238,37 +241,20 @@ class Grid:
         | 2-dimensional location of a grid.
     location_3d : tuple
         | 3-dimensional location of a grid.
-    works : list
-        | A list of Work that is conducted on the grid.
-    last_day : int
-        | The last working day of works.
-    duration : int
-        | Total working day on the grid.
     '''
 
-    def __init__(self, location):
-        self.x, self.y, self.z = [int(l) for l in location.split('_')]
+    def __init__(self, location, works):
+        self.location = location
+
+        self.x, self.y, self.z = [int(l) for l in self.location.split('_')]
         self.location_2d = tuple((self.x, self.y))
         self.location_3d = tuple((self.x, self.y, self.z))
 
-        self.works = []
+        self.works = works
 
-        self.last_day = ''
-        self.duration = ''
 
     def __len__(self):
         return len(self.works)
-
-    def __iter__(self):
-        for work in self.works:
-            yield work
-
-    def update(self):
-        self.last_day = max([w.day for w in self.works], default=0)
-        self.duration = self.last_day+1 # The working day starts with 0
-
-    ## TODO
-    # def delay_from_here(self, day)
 
 
 class Project:
@@ -279,77 +265,81 @@ class Project:
     ----------
     grids : list
         | A list of grids.
-    critical_grids : list
-        | The grids whose workday is the longest.
 
     Methods
     -------
-    find_critical_grids
-        | To find the longest work.
     adjust_all
         | Adjust every work based on the critical grid.
     adjust_one
         | Adjust one work based on the critical grid.
     '''
 
-    def __init__(self, grids):
+    def __init__(self, grids, duration):
         self.grids = grids
+        self.duration = duration
 
-        self.duration = None
-        self.critical_grids = None
-        self.schedule = None
+        self.schedule = []
 
-        self.update()
-
-    def __iter__(self):
-        for location in self.grids:
-            yield self.grids[location]
-
-    def __update_duration(self):
-        self.duration = max([grid.duration for loc, grid in self.grids.items()])
-
-    def __update_critical_grids(self):
-        self.critical_grids = [loc for loc, grid in self.grids.items() if grid.duration == self.duration]
-
-    def __update_schedule(self):
-        schedule = defaultdict(list)
-        for day in range(self.duration):
-            for loc, grid in self.grids.items():
-                try:
-                    work_today = [w for w in grid if w.day == day][0]
-                    schedule[day].append('{:>10}'.format(work_today.activity.code))
-                except IndexError:
-                    schedule[day].append('{:>10}'.format(''))
-        self.schedule = pd.DataFrame(schedule, index=list(self.grids.keys()))
+        self.__initialize()
 
     def update(self):
-        self.__update_duration()
-        self.__update_critical_grids()
-        self.__update_schedule()
+        pass
 
-    ## TODO
-    def adjust_one(self, location):
-        for w2 in self.grids[location]:
-            for critical_grid in self.critical_grids:
-                for w1 in self.grids[location]:
+    def __initialize(self):
+        for grid in self.grids:
+            for day in range(self.duration):
+                try:
+                    self.schedule.append(Work(grid=grid, day=day, activity=grid.works[day]))
+                except IndexError:
+                    continue
 
-                    # Same activity with critical grid --> work in the same day
-                    if w1.activity.code == w2.activity.code:
-                        if w2.day < w1.day:
-                            w2.day = deepcopy(w1.day)
+    def find(self, activity_code, verbose=False):
+        here = []
+        for work in self.schedule:
+            if activity_code == work.activity.code:
+                here.append(work)
 
-    def adjust_all(self):
-        for loc in self.grids:
-            self.adjust_one(location=loc)
+        if verbose:
+            print('Fine {}:'.format(activity_code))
+            print('  | LOCATIN | DAY |')
+            for work in sorted(here, key=lambda x:x.day, reverse=False):
+                print('  | {:<7} | {:>3} |'.format(work.grid.location, work.day))
+        else:
+            pass
+
+        return here
+
+    def push_workday(self, location, start_day, change):
+        for work in self.schedule:
+            if work.grid.location == location:
+                if work.day >= start_day:
+                    work.day += change
+                else:
+                    continue
+            else:
+                continue
+
+    def __productivity(self):
+        pass
+
+    def __simultaneity(self):
+        pass
 
     def summary(self):
         print('____________________________________________________________')
         print('Duration: {} days'.format(self.duration))
-        print('Critical Grids: {}'.format(self.critical_grids))
         print()
         print('Schedule:')
         print(self.schedule)
         print('____________________________________________________________')
 
     def export(self, fpath):
-        self.schedule.to_excel(fpath, na_rep='', header=True, index=True)
+        schedule_dict = defaultdict(dict)
+        for day in range(self.duration):
+            schedule_dict[day] = {}
+
+        for work in self.schedule:
+            schedule_dict[work.day][work.grid.location] = work.activity.code
+
+        schedule_df = pd.DataFrame(schedule_dict)
+        schedule_df.to_excel(fpath, na_rep='', header=True, index=True)
