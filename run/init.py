@@ -40,15 +40,7 @@ def set_navisystem():
 
     return NaviSystem(activities=activities)
 
-def save_navisystem(navisystem):
-    with open(navipath.navisystem, 'wb') as f:
-        pk.dump(navisystem, f)
-
-    print('Save NaviSystem:')
-    print('  | FilePath: {}'.format(navipath.navisystem))
-    print('  | # of Activities: {}'.format(len(navisystem)))
-
-def set_activity_order(navisystem):
+def init_activity_order(navisystem):
     activity_order = pd.read_excel(navipath.activity_order)
     key_errors = []
     for _, line in activity_order.iterrows():
@@ -81,8 +73,46 @@ def set_activity_order(navisystem):
 
     return navisystem
 
+def set_activity_order_recursively(navisystem):
+    navisystem = init_activity_order(navisystem)
+
+    updates = [True]
+    while any(updates) == True:
+        updates = []
+        for activity_code in navisystem.activities:
+            activity = navisystem.activities[activity_code]
+
+            existing_preds = deepcopy(list(set(activity.predecessor)))
+            for pred_code in activity.predecessor:
+                pred_of_pred = list(set(navisystem.activities[pred_code].predecessor))
+                updated_preds = deepcopy(list(set(existing_preds+pred_of_pred)))
+                if set(updated_preds) != set(existing_preds):
+                    navisystem.activities[activity_code].predecessor = updated_preds
+                    updates.append(True)
+            
+            existing_succs = deepcopy(list(set(activity.successor)))
+            for succ_code in activity.successor:
+                succ_of_succ = list(set(navisystem.activities[succ_code].successor))
+                updated_succs = deepcopy(list(set(existing_succs+succ_of_succ)))
+                if set(updated_succs) != set(existing_succs):
+                    navisystem.activities[activity_code].successor = updated_succs
+                    updates.append(True)
+
+    print(navisystem.activities['A45010'].predecessor)
+    print(navisystem.activities['A45010'].successor)
+
+    return navisystem
+
+def save_navisystem(navisystem):
+    with open(navipath.navisystem, 'wb') as f:
+        pk.dump(navisystem, f)
+
+    print('Save NaviSystem:')
+    print('  | FilePath: {}'.format(navipath.navisystem))
+    print('  | # of Activities: {}'.format(len(navisystem)))
+
 
 if __name__ == '__main__':
     navisystem = set_navisystem()
-    navisystem_ordered = set_activity_order(navisystem=navisystem)
+    navisystem_ordered = set_activity_order_recursively(navisystem=navisystem)
     save_navisystem(navisystem=navisystem_ordered)
