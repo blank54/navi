@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Configuration
+import random
 import pandas as pd
 from copy import deepcopy
 from itertools import combinations
@@ -204,6 +205,30 @@ class NaviSystem:
             for error in errors:
                 print('  | [{}] and [{}]'.format(error[0], error[1]))
 
+        return fines, irrelevants, conflicts, errors
+
+    # def __sort_activities(self):
+    #     ## Check activity order consistency.
+    #     _, _, conflicts, errors = self.check_order()
+
+    #     if any((conflicts, errors)):
+    #         print('>>>Debug activity orders')
+    #         return None
+    #     else:
+    #         pass
+
+    #     sorted_activity_list = list(set(self.activities.keys()))
+    #     while :
+    #         random.shuffle(sorted_activity_list)
+    #         for idx in range(len(sorted_activity_list)-1):
+    #             left_code = sorted_activity_list[idx]
+    #             left_activity = self.activities[left_code]
+
+    #             right_code = sorted_activity_list[idx+1]
+    #             right_activity = self.activities[right_code]
+
+    #     return sorted_activity_list
+
 
 class Work:
     '''
@@ -278,6 +303,7 @@ class Project:
         self.grids = grids
         self.duration = duration
 
+        self.bag_of_activity_code = []
         self.schedule = []
 
         self.__initialize()
@@ -286,12 +312,18 @@ class Project:
         pass
 
     def __initialize(self):
+        bag_of_activity_code = []
+
         for grid in self.grids:
+            bag_of_activity_code.extend([activity.code for activity in grid.works])
+
             for day in range(self.duration):
                 try:
                     self.schedule.append(Work(grid=grid, day=day, activity=grid.works[day]))
                 except IndexError:
                     continue
+
+        self.bag_of_activity_code = list(set(bag_of_activity_code))
 
     def find(self, activity_code, verbose=False):
         here = []
@@ -322,7 +354,34 @@ class Project:
     def __productivity(self):
         pass
 
-    def __simultaneity(self):
+    def __find_earliest_workday(self, activity_code):
+        workdays = []
+        for grid in self.grids:
+            workdays.extend([idx for idx, acitivity in enumerate(grid.works) if activity.code == activity_code])
+
+        return min(workdays)
+
+    def reschedule(self):
+        ## Find the earliest workday for each activity.
+        earliest_workdays = {}
+        for activity_code in self.bag_of_activity_code:
+            earliest_workdays[activity_code] = self.__find_earliest_workday(activity_code=activity_code)
+
+        ## TODO: Connect activities and 
+
+
+
+        ## TODO: extract sorted activity list from schedule
+
+
+        ## TODO: assign workday for each location
+
+
+        ## TODO: apply productivity constraints
+
+
+
+        # self.schedule = schedule_updated
         pass
 
     def summary(self):
