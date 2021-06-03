@@ -13,5 +13,5 @@ navipath = NaviPath()
 with open(navipath.case_01_proj, 'rb') as f:
     project = pk.load(f)
 
-project.reschedule()
+project.reschedule_push_and_pull()
 project.export(fpath=navipath.case_01_reschedule)

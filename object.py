@@ -309,8 +309,8 @@ class Project:
 
         self.__initialize()
 
-    def update(self):
-        pass
+    def __len__(self):
+        return max([work.day for work in self.schedule])+1
 
     def __initialize(self):
         bag_of_activity_code = []
@@ -352,9 +352,6 @@ class Project:
             else:
                 continue
 
-    def __productivity(self):
-        pass
-
     def __find_earliest_workday(self, activity_code):
         workdays = []
         for grid in self.grids:
@@ -390,7 +387,7 @@ class Project:
 
         return pivot_works
 
-    def reschedule(self):
+    def reschedule_one-day_one-activity(self):
         updated_schedule = []
 
         ## Find the earliest workday for each activity.
@@ -402,10 +399,7 @@ class Project:
         ## Connect activities.
         pivot_works = self.__connect_pivot_works(earliest_days=earliest_days)
 
-        ## TODO: apply productivity constraints
-
-
-        ## TODO: assign workday
+        ## Assign workday
         when_to_do = {activity_code: day for day, activity_code in enumerate(pivot_works)}
         for grid in self.grids:
             for activity in grid.works:
@@ -413,6 +407,13 @@ class Project:
                 updated_schedule.append(Work(grid=grid, day=day, activity=activity))
             
         self.schedule = updated_schedule
+
+    ## TODO: Push workdays based on productivity
+    def reschedule_push_and_pull(self):
+        # for day in range(self.__len__()):
+        #     for work in [work for work in self.schedule if work.day == day]:
+        #         print(work.activity.prod)
+        pass
 
     def summary(self):
         print('____________________________________________________________')
