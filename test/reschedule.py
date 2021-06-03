@@ -10,7 +10,8 @@ from naviutil import NaviPath
 navipath = NaviPath()
 
 
-with open(navipath.navisystem, 'rb') as f:
-    navisystem = pk.load(f)
+with open(navipath.case_01_proj, 'rb') as f:
+    project = pk.load(f)
 
-navisystem.check_order()
+project.reschedule()
+project.export(fpath=navipath.case_01_reschedule)

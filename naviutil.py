@@ -18,5 +18,6 @@ class NaviPath:
     navisystem = os.path.join(fdir_component, 'navisystem.pk')
 
     case_01 = os.path.join(fdir_data, 'case_01.xlsx')
-    case_01_proj = os.path.join(fdir_data, 'case_01_proj.xlsx')
-    case_01_proj_test = os.path.join(fdir_data, 'case_01_proj_test.xlsx')
+    case_01_proj = os.path.join(fdir_data, 'case_01_proj.pk')
+    case_01_schedule = os.path.join(fdir_data, 'case_01_schedule.xlsx')
+    case_01_reschedule = os.path.join(fdir_data, 'case_01_reschedule.xlsx')

@@ -24,10 +24,10 @@ def load_navisystem():
         return pk.load(f)
 
 def define_works():
+    global navisystem
+
     case_data = pd.read_excel(navipath.case_01)
-    navisystem = load_navisystem()
-
-
+    
     works = defaultdict(list)
     for idx, line in case_data.iterrows():
         x = int(line['x'])
@@ -43,35 +43,32 @@ def define_works():
 
         works[location].append(activity)
 
-
-
     return works
 
 def initiate_project():
-    global works, duration
+    global works, duration, navisystem
 
     grids = []
     for loc in works:
         grids.append(Grid(location=loc, works=works[loc]))
 
-    project = Project(grids=grids, duration=duration)
+    project = Project(activities=navisystem.activities, grids=grids, duration=duration)
     # project.summary()
-    project.export(fpath=navipath.case_01_proj)
+    project.export(fpath=navipath.case_01_schedule)
 
     return project
 
-def adjust_project():
-    global project
-
-    # project.find(activity_code='S10020', verbose=True)
-    project.push_workday(location='2_3_2', start_day=1, change=1)
-    project.export(fpath=navipath.case_01_proj_test)
-
 
 if __name__ == '__main__':
+    ## Load NaviSystem
+    navisystem = load_navisystem()
+
     ## Init Project
     duration = 60
     works = define_works()
 
     project = initiate_project()
-    adjust_project()
+    # adjust_project()
+
+    with open(navipath.case_01_proj, 'wb') as f:
+        pk.dump(project, f)

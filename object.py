@@ -299,7 +299,8 @@ class Project:
         | Adjust one work based on the critical grid.
     '''
 
-    def __init__(self, grids, duration):
+    def __init__(self, activities, grids, duration):
+        self.activities = activities
         self.grids = grids
         self.duration = duration
 
@@ -357,32 +358,61 @@ class Project:
     def __find_earliest_workday(self, activity_code):
         workdays = []
         for grid in self.grids:
-            workdays.extend([idx for idx, acitivity in enumerate(grid.works) if activity.code == activity_code])
+            workdays.extend([idx for idx, activity in enumerate(grid.works) if activity.code == activity_code])
 
         return min(workdays)
 
+    def __sort_activities(self, activity_list):
+        ranks = defaultdict(int)
+        for code_i, code_j in combinations(activity_list, r=2):
+            activity_i = self.activities[code_i]
+            activity_j = self.activities[code_j]
+
+            if activity_j in activity_i.predecessor:
+                ranks[code_i] += 1
+            elif activity_j in activity_i.successor:
+                ranks[code_j] += 1
+            else:
+                ranks[code_i] += 0
+                ranks[code_j] += 0
+
+        return [code for code in sorted(ranks.keys(), key=lambda x:x[1], reverse=False)]
+
+    def __connect_pivot_works(self, earliest_days):
+        pivot_works = []
+        for day in sorted(earliest_days.keys()):
+            if len(earliest_days[day]) == 1:
+                activity_code = earliest_days[day][0]
+                pivot_works.append(activity_code)
+            else:
+                ## TODO: Compare activity orders
+                pivot_works.extend(self.__sort_activities(activity_list=earliest_days[day]))
+
+        return pivot_works
+
     def reschedule(self):
+        updated_schedule = []
+
         ## Find the earliest workday for each activity.
-        earliest_workdays = {}
+        earliest_days = defaultdict(list)
         for activity_code in self.bag_of_activity_code:
-            earliest_workdays[activity_code] = self.__find_earliest_workday(activity_code=activity_code)
+            day = self.__find_earliest_workday(activity_code=activity_code)
+            earliest_days[day].append(activity_code)
 
-        ## TODO: Connect activities and 
-
-
-
-        ## TODO: extract sorted activity list from schedule
-
-
-        ## TODO: assign workday for each location
-
+        ## Connect activities.
+        pivot_works = self.__connect_pivot_works(earliest_days=earliest_days)
 
         ## TODO: apply productivity constraints
 
 
-
-        # self.schedule = schedule_updated
-        pass
+        ## TODO: assign workday
+        when_to_do = {activity_code: day for day, activity_code in enumerate(pivot_works)}
+        for grid in self.grids:
+            for activity in grid.works:
+                day = when_to_do[activity.code]
+                updated_schedule.append(Work(grid=grid, day=day, activity=activity))
+            
+        self.schedule = updated_schedule
 
     def summary(self):
         print('____________________________________________________________')
