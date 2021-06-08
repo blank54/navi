@@ -14,59 +14,58 @@ from collections import defaultdict
 
 import sys
 sys.path.append('/data/blank54/workspace/project/navi/')
-from object import Work, Grid, Project
+from object import Grid, Project
 from naviutil import NaviPath
 navipath = NaviPath()
 
 
-def load_activity_tree():
-    with open(navipath.activity_tree, 'rb') as f:
+def load_navisystem():
+    with open(navipath.navisystem, 'rb') as f:
         return pk.load(f)
 
-def initiate_project():
-    case_data = pd.read_excel(navipath.case_01)
-    activity_tree = load_activity_tree()
-    grids = defaultdict(Grid)
+def define_works():
+    global navisystem
 
+    case_data = pd.read_excel(navipath.case_01)
+    
+    works = defaultdict(list)
     for idx, line in case_data.iterrows():
         x = int(line['x'])
         y = int(line['y'])
         z = int(line['z'])
         location = '{}_{}_{}'.format(x, y, z)
-        grid = Grid(location=location)
 
         try:
             code = line['code']
-            activity = activity_tree.leaves[code]
+            activity = navisystem.activities[code]
         except KeyError:
             continue
 
-        if location in grids:
-            grid = grids[location]
-            today = grid.last_day+1
-        else:
-            grid = Grid(location=location)
-            today = 0
+        works[location].append(activity)
 
-        grid.works.append(Work(activity=activity, day=today))
-        grid.update()
-        grids[location] = grid
+    return works
 
-    return Project(grids=grids)
+def initiate_project():
+    global works, duration, navisystem
+
+    grids = []
+    for loc in works:
+        grids.append(Grid(location=loc, works=works[loc]))
+
+    project = Project(activities=navisystem.activities, grids=grids, duration=duration)
+    # project.summary()
+    project.export(fpath=navipath.case_01_schedule)
+
+    return project
 
 
 if __name__ == '__main__':
+    ## Load NaviSystem
+    navisystem = load_navisystem()
+
     ## Init Project
+    duration = 60
+    works = define_works()
     project = initiate_project()
-    project.summary()
-    project.export(fpath=navipath.case_01_proj)
-
-
-
-    ## TODO
-    ## Adjust workdays
-    project_modi = deepcopy(project)
-    project_modi.adjust_all()
-    project_modi.update()
-    project_modi.summary()
-    project.export(fpath=os.path.join(navipath.fdir_data, 'case_01_proj_modi.xlsx'))
+    with open(navipath.case_01_proj, 'wb') as f:
+        pk.dump(project, f)

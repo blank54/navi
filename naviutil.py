@@ -15,7 +15,9 @@ class NaviPath:
     activity_table = os.path.join(fdir_template, 'activity_table.xlsx')
     activity_order = os.path.join(fdir_template, 'activity_order.xlsx')
 
-    activity_tree = os.path.join(fdir_component, 'activity_tree.pk')
+    navisystem = os.path.join(fdir_component, 'navisystem.pk')
 
     case_01 = os.path.join(fdir_data, 'case_01.xlsx')
-    case_01_proj = os.path.join(fdir_data, 'case_01_proj.xlsx')
+    case_01_proj = os.path.join(fdir_data, 'case_01_proj.pk')
+    case_01_schedule = os.path.join(fdir_data, 'case_01_schedule.xlsx')
+    case_01_reschedule = os.path.join(fdir_data, 'case_01_reschedule.xlsx')

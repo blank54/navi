@@ -13,4 +13,5 @@ navipath = NaviPath()
 with open(navipath.navisystem, 'rb') as f:
     navisystem = pk.load(f)
 
-navisystem.check_order()
+if 'F20030' in navisystem.activities['S10040'].successor:
+    print('F20030')
