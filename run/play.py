@@ -66,9 +66,6 @@ if __name__ == '__main__':
     ## Init Project
     duration = 60
     works = define_works()
-
     project = initiate_project()
-    # adjust_project()
-
     with open(navipath.case_01_proj, 'wb') as f:
         pk.dump(project, f)

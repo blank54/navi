@@ -27,14 +27,14 @@ def set_navisystem():
         major = line['major_activity']
         minor = line['minor_activity']
         code = line['code']
-        prod = line['productivity']
+        productivity = line['productivity']
 
         parameters = {
             'category': category,
             'major': major,
             'minor': minor,
             'code': code,
-            'prod': prod,
+            'productivity': productivity,
         }
         activities[code] = Activity(parameters=parameters)
 
@@ -67,7 +67,7 @@ def init_activity_order(navisystem):
     if key_errors:
         key_errors = list(set(key_errors))
         for code in key_errors:
-            print('Absent in ActivityTable: {}'.format(code))
+            print('Absent in NaviSystem: {}'.format(code))
     else:
         pass
 
@@ -97,9 +97,6 @@ def set_activity_order_recursively(navisystem):
                 if set(updated_succs) != set(existing_succs):
                     navisystem.activities[activity_code].successor = updated_succs
                     updates.append(True)
-
-    print(navisystem.activities['A45010'].predecessor)
-    print(navisystem.activities['A45010'].successor)
 
     return navisystem
 

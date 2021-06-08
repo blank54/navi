@@ -23,7 +23,7 @@ class Activity:
         | Major activity name. (i.e., work package)
     minor : str
         | Minor activity name.
-    prod : int
+    productivity : int
         | The predetermined number of enable works (i.e., productivity) of the activity.
     predecessor : list
         | A list of activity codes that should be done before the current activity.
@@ -47,7 +47,7 @@ class Activity:
         self.major = parameters.get('major', 'NA')
         self.minor = parameters.get('minor', 'NA')
         
-        self.prod = parameters.get('productivity', 'NA')
+        self.productivity = parameters.get('productivity', 'NA')
 
         self.predecessor = []
         self.successor = []
@@ -326,7 +326,7 @@ class Project:
 
         self.bag_of_activity_code = list(set(bag_of_activity_code))
 
-    def find(self, activity_code, verbose=False):
+    def search(self, activity_code, verbose=False):
         here = []
         for work in self.schedule:
             if activity_code == work.activity.code:
@@ -342,78 +342,68 @@ class Project:
 
         return here
 
-    def push_workday(self, location, start_day, change):
-        for work in self.schedule:
-            if work.grid.location == location:
-                if work.day >= start_day:
-                    work.day += change
-                else:
-                    continue
-            else:
-                continue
+    # def push_workday(self, location, start_day, change):
+    #     for work in self.schedule:
+    #         if work.grid.location == location:
+    #             if work.day >= start_day:
+    #                 work.day += change
+    #             else:
+    #                 continue
+    #         else:
+    #             continue
 
-    def __find_earliest_workday(self, activity_code):
-        workdays = []
-        for grid in self.grids:
-            workdays.extend([idx for idx, activity in enumerate(grid.works) if activity.code == activity_code])
+    # def __sort_activities(self, activity_list):
+    #     ranks = defaultdict(int)
+    #     for code_i, code_j in combinations(activity_list, r=2):
+    #         activity_i = self.activities[code_i]
+    #         activity_j = self.activities[code_j]
 
-        return min(workdays)
+    #         if activity_j in activity_i.predecessor:
+    #             ranks[code_i] += 1
+    #         elif activity_j in activity_i.successor:
+    #             ranks[code_j] += 1
+    #         else:
+    #             ranks[code_i] += 0
+    #             ranks[code_j] += 0
 
-    def __sort_activities(self, activity_list):
-        ranks = defaultdict(int)
-        for code_i, code_j in combinations(activity_list, r=2):
-            activity_i = self.activities[code_i]
-            activity_j = self.activities[code_j]
+    #     return [code for code in sorted(ranks.keys(), key=lambda x:x[1], reverse=False)]
 
-            if activity_j in activity_i.predecessor:
-                ranks[code_i] += 1
-            elif activity_j in activity_i.successor:
-                ranks[code_j] += 1
-            else:
-                ranks[code_i] += 0
-                ranks[code_j] += 0
+    def __get_local_works(self, location):
+        works = [work for work in self.schedule if work.grid.location == location]
+        sorted_works = sorted(works, key=lambda x:x.day, reverse=False)
+        return sorted_works
 
-        return [code for code in sorted(ranks.keys(), key=lambda x:x[1], reverse=False)]
-
-    def __connect_pivot_works(self, earliest_days):
-        pivot_works = []
-        for day in sorted(earliest_days.keys()):
-            if len(earliest_days[day]) == 1:
-                activity_code = earliest_days[day][0]
-                pivot_works.append(activity_code)
-            else:
-                ## TODO: Compare activity orders
-                pivot_works.extend(self.__sort_activities(activity_list=earliest_days[day]))
-
-        return pivot_works
-
-    def reschedule_one-day_one-activity(self):
+    def reschedule(self):
         updated_schedule = []
 
-        ## Find the earliest workday for each activity.
-        earliest_days = defaultdict(list)
-        for activity_code in self.bag_of_activity_code:
-            day = self.__find_earliest_workday(activity_code=activity_code)
-            earliest_days[day].append(activity_code)
-
-        ## Connect activities.
-        pivot_works = self.__connect_pivot_works(earliest_days=earliest_days)
-
-        ## Assign workday
-        when_to_do = {activity_code: day for day, activity_code in enumerate(pivot_works)}
+        local_works = {}
         for grid in self.grids:
-            for activity in grid.works:
-                day = when_to_do[activity.code]
-                updated_schedule.append(Work(grid=grid, day=day, activity=activity))
-            
-        self.schedule = updated_schedule
+            local_works[grid.location] = self.__get_local_works(location=grid.location)
 
-    ## TODO: Push workdays based on productivity
-    def reschedule_push_and_pull(self):
-        # for day in range(self.__len__()):
-        #     for work in [work for work in self.schedule if work.day == day]:
-        #         print(work.activity.prod)
-        pass
+        day = 0
+        while day <= self.duration:
+            ## Initialize activity stack.
+            activity_stack = {activity_code: 0 for activity_code in self.activities.keys()}
+            for grid in self.grids:
+                if not local_works[grid.location]:
+                    continue
+
+                ## Assign new workday to activity considering productivity.
+                next_work = local_works[grid.location][0]
+                next_activity = next_work.activity
+                if activity_stack[next_activity.code] >= self.activities[next_activity.code].productivity:
+                    continue
+                else:
+                    work = local_works[grid.location].pop(0)
+                    updated_schedule.append(Work(grid=grid, day=day, activity=work.activity))
+                    activity_stack[work.activity.code] += 1
+            day += 1
+
+        ## TODO: Push some duration-free works to be conducted in the same day.
+
+        ## TODO: Return error if any work remains in local_works.
+
+        self.schedule = updated_schedule
 
     def summary(self):
         print('____________________________________________________________')
