@@ -365,7 +365,6 @@ class Project:
     ## TODO: Sort the grids by starting at a grid with the longest workdays and move to the nearest grid.
     def __sort_grids(self):
         self.sorted_grids = self.grids
-        pass
 
     def __get_local_works(self, location):
         works = [work for work in self.schedule if work.grid.location == location]
