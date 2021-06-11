@@ -288,15 +288,23 @@ class Project:
 
     Attributes
     ----------
+    activities : dict
+        | A dictionary of activities of which keys are activity_code and values are activity (i.e., the class of Activity).
     grids : list
-        | A list of grids.
+        | A list of grids (i.e., the class of Grid).
+    duration : int
+        | The duration of the project that determined by the user.
+    bag_of_activity_code : list
+        | A list of activity codes that have been used in the project.
+    schedule : list
+        | A list of works (i.e., the class of Work).
+    sorted_grids : list
+        | A list of grids that are sorted based on the distance from the grid with the longest workday.
 
     Methods
     -------
-    adjust_all
-        | Adjust every work based on the critical grid.
-    adjust_one
-        | Adjust one work based on the critical grid.
+    search
+        | To find location and workday for an activity.
     '''
 
     def __init__(self, activities, grids, duration):
@@ -306,8 +314,10 @@ class Project:
 
         self.bag_of_activity_code = []
         self.schedule = []
+        self.sorted_grids = ''
 
         self.__initialize()
+        self.__sort_grids()
 
     def __len__(self):
         return max([work.day for work in self.schedule])+1
@@ -327,6 +337,16 @@ class Project:
         self.bag_of_activity_code = list(set(bag_of_activity_code))
 
     def search(self, activity_code, verbose=False):
+        '''
+        A method to find location and workday for an activity.
+        Input the code of the activity.
+
+        Attributes
+        ----------
+        activity_code : str
+            | The predetermined code of the activity that the user wants to search.
+        '''
+
         here = []
         for work in self.schedule:
             if activity_code == work.activity.code:
@@ -342,36 +362,28 @@ class Project:
 
         return here
 
-    # def push_workday(self, location, start_day, change):
-    #     for work in self.schedule:
-    #         if work.grid.location == location:
-    #             if work.day >= start_day:
-    #                 work.day += change
-    #             else:
-    #                 continue
-    #         else:
-    #             continue
-
-    # def __sort_activities(self, activity_list):
-    #     ranks = defaultdict(int)
-    #     for code_i, code_j in combinations(activity_list, r=2):
-    #         activity_i = self.activities[code_i]
-    #         activity_j = self.activities[code_j]
-
-    #         if activity_j in activity_i.predecessor:
-    #             ranks[code_i] += 1
-    #         elif activity_j in activity_i.successor:
-    #             ranks[code_j] += 1
-    #         else:
-    #             ranks[code_i] += 0
-    #             ranks[code_j] += 0
-
-    #     return [code for code in sorted(ranks.keys(), key=lambda x:x[1], reverse=False)]
+    ## TODO: Sort the grids by starting at a grid with the longest workdays and move to the nearest grid.
+    def __sort_grids(self):
+        self.sorted_grids = self.grids
+        pass
 
     def __get_local_works(self, location):
         works = [work for work in self.schedule if work.grid.location == location]
         sorted_works = sorted(works, key=lambda x:x.day, reverse=False)
         return sorted_works
+
+    def __check_productivity(self, activity_stack, next_activity):
+        '''
+        If the number of activities existing in the stack is smaller than the activity's productivity, return True.
+        '''
+
+        if activity_stack[next_activity.code] < self.activities[next_activity.code].productivity:
+            return True
+        else:
+            return False
+
+    def __check_pre_dist(self):
+        return True
 
     def reschedule(self):
         updated_schedule = []
@@ -381,31 +393,58 @@ class Project:
             local_works[grid.location] = self.__get_local_works(location=grid.location)
 
         day = 0
+        ## TODO: Return warning if the day becomes larger than the duration.
         while day <= self.duration:
+
             ## Initialize activity stack.
             activity_stack = {activity_code: 0 for activity_code in self.activities.keys()}
-            for grid in self.grids:
-                if not local_works[grid.location]:
+
+            ## Try to assign a work on each grid.
+            ## TODO: Start at a grid with the longest workdays and move to the nearest grid.
+            for grid in self.sorted_grids:
+                remaining_works = local_works[grid.location]
+                if not remaining_works:
                     continue
 
-                ## Assign new workday to activity considering productivity.
-                next_work = local_works[grid.location][0]
+                ## Get the first remaining work on the grid.
+                next_work = remaining_works[0]
                 next_activity = next_work.activity
-                if activity_stack[next_activity.code] >= self.activities[next_activity.code].productivity:
+                
+                ## If productivity on the day is full, remain the grid blank and move to the next.
+                if not self.__check_productivity(activity_stack=activity_stack, next_activity=next_activity):
                     continue
+
+                ## TODO: If predecessors around not over yet, remain the grid blank and move to the next.
+                if not self.__check_pre_dist():
+                    continue
+
+                ## If all of the constraints are okay, assign the work.
                 else:
-                    work = local_works[grid.location].pop(0)
-                    updated_schedule.append(Work(grid=grid, day=day, activity=work.activity))
+                    next_work = remaining_works.pop(0)
+                    work = Work(grid=grid, day=day, activity=next_work.activity)
+                    updated_schedule.append(work)
                     activity_stack[work.activity.code] += 1
+
+            ## Once every grid passed the work assignment process, move to the next day.
             day += 1
+
+        ## TODO: Assign same works to close grids.
+
+        ## TODO: Check activity orders.
 
         ## TODO: Push some duration-free works to be conducted in the same day.
 
         ## TODO: Return error if any work remains in local_works.
 
+        ## Update the schedule and sort the grids again.
         self.schedule = updated_schedule
+        self.__sort_grids()
 
     def summary(self):
+        '''
+        Summarize the project schedule.
+        '''
+
         print('____________________________________________________________')
         print('Duration: {} days'.format(self.duration))
         print()
@@ -414,6 +453,15 @@ class Project:
         print('____________________________________________________________')
 
     def export(self, fpath):
+        '''
+        Export the project schedule in the format of ".xlsx".
+
+        Attributes
+        ----------
+        fpath : str
+            | FilePath for the exported schedule.
+        '''
+
         schedule_dict = defaultdict(dict)
         for day in range(self.duration):
             schedule_dict[day] = {}
