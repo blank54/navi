@@ -25,3 +25,4 @@ tmp/
 *.png
 *.csv
 *.h5
+*.ipynb
