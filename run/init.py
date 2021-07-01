@@ -108,8 +108,52 @@ def save_navisystem(navisystem):
     print('  | FilePath: {}'.format(navipath.navisystem))
     print('  | # of Activities: {}'.format(len(navisystem)))
 
+def define_works(navisystem, case_data):
+    works = defaultdict(list)
+    for idx, line in case_data.iterrows():
+        x = int(line['x'])
+        y = int(line['y'])
+        z = int(line['z'])
+        location = '{}_{}_{}'.format(x, y, z)
+
+        try:
+            code = line['code']
+            activity = navisystem.activities[code]
+        except KeyError:
+            continue
+
+        works[location].append(activity)
+
+    return works
+
+def initiate_project(works, duration, navisystem):
+    grids = []
+    for loc in works:
+        grids.append(Grid(location=loc, works=works[loc]))
+
+    project = Project(activities=navisystem.activities, grids=grids, duration=duration)
+    # project.summary()
+    project.export(fpath=navipath.case_01_schedule)
+
+    return project
+
+def save_project(project):
+    with open(navipath.case_01_proj, 'wb') as f:
+        pk.dump(project, f)
+
 
 if __name__ == '__main__':
+    ## Project Constraints
+    duration = 60
+
+    ## Init NaviSystem
     navisystem = set_navisystem()
     navisystem_ordered = set_activity_order_recursively(navisystem=navisystem)
     save_navisystem(navisystem=navisystem_ordered)
+
+    ## Init Project
+    navisystem = load_navisystem()
+    case_data = pd.read_excel(navipath.case_01)
+    works = define_works(navisystem, case_data)
+    project = initiate_project(works, duration, navisystem)
+    save_project(project=project)
