@@ -417,12 +417,23 @@ class Project:
                 if not self.__check_pre_dist():
                     continue
 
+
+
+
+
+
                 ## >>WORK HERE<<
                 '''
                 Develop your code here.
                 Then, run 'test/reschedule.py' to test the code.
                 You can find the result directories on 'naviutil.py'
                 '''
+
+
+
+
+
+
 
 
 
