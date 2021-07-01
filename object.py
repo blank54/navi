@@ -417,12 +417,21 @@ class Project:
                 if not self.__check_pre_dist():
                     continue
 
+                ## >>WORK HERE<<
+                '''
+                Develop your code here.
+                Then, run 'test/reschedule.py' to test the code.
+                You can find the result directories on 'naviutil.py'
+                '''
+
+
+
                 ## If all of the constraints are okay, assign the work.
-                else:
-                    next_work = remaining_works.pop(0)
-                    work = Work(grid=grid, day=day, activity=next_work.activity)
-                    updated_schedule.append(work)
-                    activity_stack[work.activity.code] += 1
+                # else:
+                next_work = remaining_works.pop(0)
+                work = Work(grid=grid, day=day, activity=next_work.activity)
+                updated_schedule.append(work)
+                activity_stack[work.activity.code] += 1
 
             ## Once every grid passed the work assignment process, move to the next day.
             day += 1

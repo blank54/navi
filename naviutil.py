@@ -6,7 +6,7 @@ import os
 
 
 class NaviPath:
-    root = '/data/blank54/workspace/project/navi/'
+    root = os.path.dirname(os.path.abspath(__file__))
     
     fdir_template = os.path.join(root, 'template/')
     fdir_component = os.path.join(root, 'component')

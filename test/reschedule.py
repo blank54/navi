@@ -13,9 +13,13 @@ def do_reschedule():
     with open(navipath.case_01_proj, 'rb') as f:
         project = pk.load(f)
 
-    # project.reschedule_oneday_oneactivity()
-    # project.reschedule_push_and_pull()
+    ## Export original schedule of the project.
+    project.export(fpath=navipath.case_01_schedule)
+
+    ## Reschedule the project.
     project.reschedule()
+
+    ## Export modified schedule of the project.
     project.export(fpath=navipath.case_01_reschedule)
 
 
