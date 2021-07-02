@@ -429,7 +429,8 @@ class Project:
                 You can find the result directories on 'naviutil.py'
                 '''
 
-
+                if next_activity.code == 'S10010':
+                    continue
 
 
 

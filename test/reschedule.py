@@ -5,7 +5,7 @@
 import pickle as pk
 
 import sys
-sys.path.append('/data/blank54/workspace/project/navi/')
+sys.path.append('d://cns/navi-master/navi')
 from naviutil import NaviPath
 navipath = NaviPath()
 

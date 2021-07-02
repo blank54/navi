@@ -13,8 +13,8 @@ from copy import deepcopy
 from collections import defaultdict
 
 import sys
-sys.path.append('/data/blank54/workspace/project/navi/')
-from object import Activity, NaviSystem
+sys.path.append('D:\\cns\\navi-master\\navi')
+from object import *
 from naviutil import NaviPath
 navipath = NaviPath()
 
@@ -152,7 +152,7 @@ if __name__ == '__main__':
     save_navisystem(navisystem=navisystem_ordered)
 
     ## Init Project
-    navisystem = load_navisystem()
+    # navisystem = load_navisystem()
     case_data = pd.read_excel(navipath.case_01)
     works = define_works(navisystem, case_data)
     project = initiate_project(works, duration, navisystem)
