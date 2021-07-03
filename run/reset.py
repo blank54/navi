@@ -18,12 +18,14 @@ def do_reset():
                   navipath.fdir_proj, 
                   navipath.fdir_schedule,]
 
+    print('==================================================')
+    print('RESET workspace')
     for dir in reset_dirs:
         try:
             shutil.rmtree(dir)
-            print('Reset: {}'.format(dir))
+            print('  | Reset: {}'.format(dir))
         except FileNotFoundError:
-            print('No File or Directory: {}'.format(dir))
+            print('  | No File or Directory: {}'.format(dir))
 
 
 if __name__ == '__main__':
