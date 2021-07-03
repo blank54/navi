@@ -17,8 +17,8 @@ from collections import defaultdict
 
 import sys
 sys.path.append(rootpath)
-from object import Activity, NaviSystem
-from naviutil import NaviPath, makedir
+from object import NaviSystem, Activity, Grid, Project
+from naviutil import NaviPath
 navipath = NaviPath()
 
 
@@ -67,10 +67,12 @@ def init_activity_order(navisystem):
         navisystem.activities[predecessor_code] = predecessor_activity
         navisystem.activities[successor_code] = successor_activity
 
+    print('==================================================')
+    print('Errors on Activities')
     if key_errors:
         key_errors = list(set(key_errors))
         for code in key_errors:
-            print('Absent in NaviSystem: {}'.format(code))
+            print('  | Absent in NaviSystem: {}'.format(code))
     else:
         pass
 
@@ -104,10 +106,11 @@ def set_activity_order_recursively(navisystem):
     return navisystem
 
 def save_navisystem(navisystem):
-    makedir(fpath=navipath.navisystem)
+    os.makedirs(navipath.fdir_component, exist_ok=True)
     with open(navipath.navisystem, 'wb') as f:
         pk.dump(navisystem, f)
 
+    print('==================================================')
     print('Save NaviSystem:')
     print('  | FilePath: {}'.format(navipath.navisystem))
     print('  | # of Activities: {}'.format(len(navisystem)))
@@ -135,35 +138,43 @@ def define_works(navisystem, case_data):
 
     return works
 
-def initiate_project(works, duration, navisystem):
+def initiate_project(case_num, duration):
+    navisystem = load_navisystem()
+
+    print('==================================================')
+    print('Init Project ...')
+
+    case_data = pd.read_excel(navipath.case(case_num))
+    works = define_works(navisystem, case_data)
     grids = []
     for loc in works:
         grids.append(Grid(location=loc, works=works[loc]))
 
     project = Project(activities=navisystem.activities, grids=grids, duration=duration)
-    # project.summary()
-    project.export(fpath=navipath.case_01_schedule)
+    project.summary()
 
     return project
 
-def save_project(project):
-    makedir(fpath=navipath.case_01_proj)
-    with open(navipath.case_01_proj, 'wb') as f:
+def save_project(case_num, project):
+    os.makedirs(navipath.fdir_proj, exist_ok=True)
+    with open(navipath.proj(case_num), 'wb') as f:
         pk.dump(project, f)
+
+    print('==================================================')
+    print('Save Project:')
+    print('  | FilePath: {}'.format(navipath.proj(case_num)))
 
 
 if __name__ == '__main__':
-    ## Project Constraints
-    duration = 60
-
     ## Init NaviSystem
     navisystem = set_navisystem()
     navisystem_ordered = set_activity_order_recursively(navisystem=navisystem)
     save_navisystem(navisystem=navisystem_ordered)
 
+    ## Project Constraints
+    case_num = '01'
+    duration = 60
+    
     ## Init Project
-    navisystem = load_navisystem()
-    case_data = pd.read_excel(navipath.case_01)
-    works = define_works(navisystem, case_data)
-    project = initiate_project(works, duration, navisystem)
-    save_project(project=project)
+    project = initiate_project(case_num, duration)
+    save_project(case_num, project)
