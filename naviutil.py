@@ -23,3 +23,19 @@ class NaviPath:
     case_01_reschedule = os.path.sep.join(fdir_data, 'case_01_reschedule.xlsx')
 
     case_01_proj = os.path.sep.join(fdir_proj, 'case_01.pk')
+
+
+def makedir(fpath):
+    '''
+    A method to make directory for the given file path.
+
+    Attributes
+    ----------
+    fpath : str
+        | A file path.
+    '''
+
+    if fpath.endswith(os.path.sep):
+        os.makedirs(fpath, exist_ok=True)
+    else:
+        os.makedirs(os.path.dirname(fpath)), exist_ok=True)

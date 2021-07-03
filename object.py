@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Configuration
+import os
 import random
 import pandas as pd
 from copy import deepcopy
@@ -488,5 +489,6 @@ class Project:
         for work in self.schedule:
             schedule_dict[work.day][work.grid.location] = work.activity.code
 
+        os.makedirs(os.path.dirname(fpath))
         schedule_df = pd.DataFrame(schedule_dict)
         schedule_df.to_excel(fpath, na_rep='', header=True, index=True)

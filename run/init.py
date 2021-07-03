@@ -18,7 +18,7 @@ from collections import defaultdict
 import sys
 sys.path.append(rootpath)
 from object import Activity, NaviSystem
-from naviutil import NaviPath
+from naviutil import NaviPath, makedir
 navipath = NaviPath()
 
 
@@ -104,12 +104,18 @@ def set_activity_order_recursively(navisystem):
     return navisystem
 
 def save_navisystem(navisystem):
+    makedir(fpath=navipath.navisystem)
     with open(navipath.navisystem, 'wb') as f:
         pk.dump(navisystem, f)
 
     print('Save NaviSystem:')
     print('  | FilePath: {}'.format(navipath.navisystem))
     print('  | # of Activities: {}'.format(len(navisystem)))
+
+def load_navisystem():
+    with open(navipath.navisystem, 'rb') as f:
+        navisystem = pk.load(f)
+    return navisystem
 
 def define_works(navisystem, case_data):
     works = defaultdict(list)
@@ -141,6 +147,7 @@ def initiate_project(works, duration, navisystem):
     return project
 
 def save_project(project):
+    makedir(fpath=navipath.case_01_proj)
     with open(navipath.case_01_proj, 'wb') as f:
         pk.dump(project, f)
 
