@@ -465,14 +465,9 @@ class Project:
         Summarize the project schedule.
         '''
 
-        print('__________________________________________________')
         print('Project Summary')
         print('  | Duration: {} days'.format(self.duration))
-        # print()
-        # print('Schedule:')
-        # print(self.schedule)
-        print('__________________________________________________')
-
+        
     def export(self, fpath):
         '''
         Export the project schedule in the format of ".xlsx".

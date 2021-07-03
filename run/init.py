@@ -142,7 +142,7 @@ def initiate_project(case_num, duration):
     navisystem = load_navisystem()
 
     print('==================================================')
-    print('Init Project ...')
+    print('Init Project')
 
     case_data = pd.read_excel(navipath.case(case_num))
     works = define_works(navisystem, case_data)
