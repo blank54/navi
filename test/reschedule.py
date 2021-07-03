@@ -12,6 +12,7 @@ sys.path.append(rootpath)
 from naviutil import NaviPath
 navipath = NaviPath()
 
+
 def do_reschedule():
     with open(navipath.case_01_proj, 'rb') as f:
         project = pk.load(f)
