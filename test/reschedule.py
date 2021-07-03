@@ -13,19 +13,23 @@ from naviutil import NaviPath
 navipath = NaviPath()
 
 
-def do_reschedule():
-    with open(navipath.case_01_proj, 'rb') as f:
+def do_reschedule(case_num):
+    with open(navipath.proj(case_num), 'rb') as f:
         project = pk.load(f)
 
     ## Export original schedule of the project.
-    project.export(fpath=navipath.case_01_schedule)
+    project.export(fpath=navipath.schedule(case_num))
 
     ## Reschedule the project.
     project.reschedule()
 
     ## Export modified schedule of the project.
-    project.export(fpath=navipath.case_01_reschedule)
+    project.export(fpath=navipath.reschedule(case_num))
 
 
 if __name__ == '__main__':
-    do_reschedule()
+    ## Project information
+    case_num = '01'
+
+    ## Reschedule the project
+    do_reschedule(case_num)

@@ -465,12 +465,13 @@ class Project:
         Summarize the project schedule.
         '''
 
-        print('____________________________________________________________')
-        print('Duration: {} days'.format(self.duration))
-        print()
-        print('Schedule:')
-        print(self.schedule)
-        print('____________________________________________________________')
+        print('__________________________________________________')
+        print('Project Summary')
+        print('  | Duration: {} days'.format(self.duration))
+        # print()
+        # print('Schedule:')
+        # print(self.schedule)
+        print('__________________________________________________')
 
     def export(self, fpath):
         '''
@@ -489,6 +490,6 @@ class Project:
         for work in self.schedule:
             schedule_dict[work.day][work.grid.location] = work.activity.code
 
-        os.makedirs(os.path.dirname(fpath))
+        os.makedirs(os.path.dirname(fpath), exist_ok=True)
         schedule_df = pd.DataFrame(schedule_dict)
         schedule_df.to_excel(fpath, na_rep='', header=True, index=True)
