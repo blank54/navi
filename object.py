@@ -438,6 +438,7 @@ class Project:
 
 
 
+
                 ## If all of the constraints are okay, assign the work.
                 # else:
                 next_work = remaining_works.pop(0)
