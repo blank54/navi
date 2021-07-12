@@ -482,9 +482,6 @@ class Project:
                 # 추천 생산성 조정 안 1,2,3 보여주기
 
 
-
-
-
                 ## >>WORK HERE<<
                 '''
                 Develop your code here.
