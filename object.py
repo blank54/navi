@@ -523,6 +523,21 @@ class Project:
         print('Project Summary')
         print('  | Duration: {} days'.format(self.duration))
         
+    def schedule2df(self):
+        '''
+        Convert the schedule into a DataFrame format.
+        '''
+
+        schedule_dict = defaultdict(dict)
+        for day in range(self.duration):
+            schedule_dict[day] = {}
+
+        for work in self.schedule:
+            schedule_dict[work.day][work.grid.location] = work.activity.code
+
+        schedule_df = pd.DataFrame(schedule_dict)
+        return schedule_df
+
     def export(self, fpath):
         '''
         Export the project schedule in the format of ".xlsx".
@@ -533,13 +548,6 @@ class Project:
             | FilePath for the exported schedule.
         '''
 
-        schedule_dict = defaultdict(dict)
-        for day in range(self.duration):
-            schedule_dict[day] = {}
-
-        for work in self.schedule:
-            schedule_dict[work.day][work.grid.location] = work.activity.code
-
         os.makedirs(os.path.dirname(fpath), exist_ok=True)
-        schedule_df = pd.DataFrame(schedule_dict)
+        schedule_df = self.schedule2df()
         schedule_df.to_excel(fpath, na_rep='', header=True, index=True)
