@@ -3,6 +3,7 @@
 
 # Configuration
 import os
+import numpy as np
 
 
 class NaviPath:
@@ -30,3 +31,11 @@ class NaviPath:
 
     def reschedule(self, case_num):
         return os.path.sep.join((self.fdir_schedule, 'schedule_{}_after.xlsx'.format(case_num)))
+
+
+class NaviFunc:
+    def euclidean_distance(self, x, y):
+        x_arr = np.array(x)
+        y_arr = np.array(y)
+        dist = np.linalg.norm(y_arr-x_arr)
+        return dist

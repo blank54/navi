@@ -3,6 +3,13 @@
 
 # Configuration
 import os
+import sys
+rootpath = os.path.sep.join(os.path.dirname(os.path.abspath(__file__)).split(os.path.sep)[:-1])
+sys.path.append(rootpath)
+
+from naviutil import NaviFunc
+navifunc = NaviFunc()
+
 import random
 import pandas as pd
 from copy import deepcopy
@@ -278,7 +285,6 @@ class Grid:
 
         self.works = works
 
-
     def __len__(self):
         return len(self.works)
 
@@ -315,7 +321,7 @@ class Project:
 
         self.bag_of_activity_code = []
         self.schedule = []
-        self.sorted_grids = ''
+        self.sorted_grids = []
 
         self.__initialize()
         self.__sort_grids()
@@ -363,9 +369,29 @@ class Project:
 
         return here
 
-    ## TODO: Sort the grids by starting at a grid with the longest workdays and move to the nearest grid.
     def __sort_grids(self):
-        self.sorted_grids = self.grids
+        '''
+        Sort the grids by starting at a grid with the longest workdays and move to the nearest grid.
+        '''
+
+        sorted_by_work_len = sorted(self.grids, key=lambda x:len(x.works), reverse=True)
+        worklen2grid = defaultdict(list)
+        for grid in sorted_by_work_len:
+            worklen2grid[len(grid.works)].append(grid)
+
+        sorted_by_dist = []
+        for worklen, grids_same_worklen in sorted(worklen2grid.items(), key=lambda x:x[0], reverse=True):
+            while len(grids_same_worklen) > 0:
+                try:
+                    last_grid = sorted_by_dist[-1]
+                except IndexError:
+                    last_grid = grids_same_worklen[0]
+
+                grids_same_worklen = sorted(grids_same_worklen, key=lambda x:navifunc.euclidean_distance(x.location_3d, last_grid.location_3d), reverse=False)
+                sorted_by_dist.append(grids_same_worklen[0])
+                grids_same_worklen.pop(0)
+
+        self.sorted_grids = sorted_by_dist
 
     def __get_local_works(self, location):
         works = [work for work in self.schedule if work.grid.location == location]
@@ -460,13 +486,21 @@ class Project:
         self.schedule = updated_schedule
         self.__sort_grids()
 
-    def summary(self):
+    def summary(self, sorted_grids=False):
         '''
         Summarize the project schedule.
         '''
 
+        print('============================================================')
         print('Project Summary')
         print('  | Duration: {} days'.format(self.duration))
+
+        if sorted_grids:
+            print('============================================================')
+            print('Sorted Grids')
+            for grid in self.sorted_grids:
+                print('  | Location: ({:>2} {:>2} {:>2}) -> WorkLen: {:>3,}'.format(grid.x, grid.y, grid.z, len(grid.works)))
+
         
     def export(self, fpath):
         '''
