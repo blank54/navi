@@ -13,6 +13,7 @@ navifunc = NaviFunc()
 import random
 import pandas as pd
 from copy import deepcopy
+import itertools
 from itertools import combinations
 from collections import defaultdict
 
@@ -322,7 +323,7 @@ class Project:
         self.duration = duration
         self.duration_expected = ''
 
-        self.bag_of_activity_code = []
+        self.bag_of_activity_code = list(set(itertools.chain(*[[activity.code for activity in grid.works] for grid in self.grids])))
         self.schedule = []
         self.sorted_grids = []
 
@@ -331,21 +332,22 @@ class Project:
         self.__estimate_duration()
 
     def __len__(self):
-        return max([work.day for work in self.schedule])+1
+        '''
+        Total number of activities to be conducted for the project.
+        '''
+
+        return len(list(itertools.chain(*[[activity for activity in grid.works] for grid in self.grids])))
 
     def __initialize(self):
-        bag_of_activity_code = []
+        '''
+        Set an initial schedule of the project.
+        '''
 
         for grid in self.grids:
-            bag_of_activity_code.extend([activity.code for activity in grid.works])
-
-            for day in range(self.duration):
-                try:
-                    self.schedule.append(Work(grid=grid, day=day, activity=grid.works[day]))
-                except IndexError:
-                    continue
-
-        self.bag_of_activity_code = list(set(bag_of_activity_code))
+            day = 0
+            while True:
+                self.schedule.append(Work(grid=grid, day=day, activity=grid.works[day]))
+                day += 1
 
     def __sort_grids(self):
         '''
@@ -372,7 +374,11 @@ class Project:
         self.sorted_grids = sorted_by_dist
 
     def __estimate_duration(self):
-        self.duration_expected = self.__len__()
+        '''
+        Estimate the project duration based on the current schedule.
+        '''
+
+        self.duration_expected = max([work.day for work in self.schedule])+1
 
     def __get_local_works(self, location):
         works = [work for work in self.schedule if work.grid.location == location]
@@ -400,22 +406,20 @@ class Project:
             local_works[grid.location] = self.__get_local_works(location=grid.location)
 
         day = 0
-        ## TODO: Return warning if the day becomes larger than the duration.
-        while day <= self.duration:
-
+        num_of_assigned_activity = 0
+        while True:
+            print(day)
             ## Initialize activity stack.
             activity_stack = {activity_code: 0 for activity_code in self.activities.keys()}
 
             ## Try to assign a work on each grid.
-            ## TODO: Start at a grid with the longest workdays and move to the nearest grid.
             for grid in self.sorted_grids:
                 remaining_works = local_works[grid.location]
                 if not remaining_works:
                     continue
 
                 ## Get the first remaining work on the grid.
-                next_work = remaining_works[0]
-                next_activity = next_work.activity
+                next_activity = remaining_works[0].activity
                 
                 ## If productivity on the day is full, remain the grid blank and move to the next.
                 if not self.__check_productivity(activity_stack=activity_stack, next_activity=next_activity):
@@ -501,14 +505,18 @@ class Project:
 
 
                 ## If all of the constraints are oka, assign the work.
-                # else:
                 next_work = remaining_works.pop(0)
                 work = Work(grid=grid, day=day, activity=next_work.activity)
                 updated_schedule.append(work)
                 activity_stack[work.activity.code] += 1
+                num_of_assigned_activity += 1
 
             ## Once every grid passed the work assignment process, move to the next day.
             day += 1
+
+            ## If all activities were assigned to a single work, stop reschduling.
+            if num_of_assigned_activity == self.__len__():
+                break
 
         ## TODO: Assign same works to close grids.
 
@@ -521,6 +529,11 @@ class Project:
         ## Update the schedule and sort the grids again.
         self.schedule = updated_schedule
         self.__sort_grids()
+        self.__estimate_duration()
+
+        ## TODO: If duration problem occurs, squeeze the schedule.
+        if self.duration_expected > self.duration:
+            print('INFO: The schedule will be overdue! Please do some actions!')
 
     def summary(self, duration=False, sorted_grids=False):
         '''
