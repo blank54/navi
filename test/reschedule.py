@@ -13,18 +13,20 @@ from naviutil import NaviPath
 navipath = NaviPath()
 
 
-def do_reschedule(case_num):
+def load_project(case_num):
     with open(navipath.proj(case_num), 'rb') as f:
-        project = pk.load(f)
+        return pk.load(f)
+
+def do_reschedule(project):
+    global case_num
 
     ## Export original schedule of the project.
     project.export(fpath=navipath.schedule(case_num))
 
-    ## Reschedule the project.
+    ## Reschedule the project and export the modified schedule.
     project.reschedule()
-
-    ## Export modified schedule of the project.
     project.export(fpath=navipath.reschedule(case_num))
+    return project
 
 
 if __name__ == '__main__':
@@ -32,4 +34,8 @@ if __name__ == '__main__':
     case_num = '01'
 
     ## Reschedule the project
-    do_reschedule(case_num)
+    project = load_project(case_num=case_num)
+    project_modi = do_reschedule(project=project)
+
+    ## Summary
+    project_modi.summary(duration=True, sorted_grids=True)
