@@ -124,7 +124,7 @@ class NaviSystem:
 
     Methods
     -------
-    __order_bw_activity
+    order_bw_activity
         | Return which activity should be done first.
     check_order
         | Check the order consistency between activities.
@@ -136,7 +136,7 @@ class NaviSystem:
     def __len__(self):
         return len(self.activities)
         
-    def __order_bw_activity(self, activity_code1, activity_code2):
+    def order_bw_activity(self, activity_code1, activity_code2):
         '''
         Attributes
         ----------
@@ -181,7 +181,7 @@ class NaviSystem:
 
         pairs = list(combinations(self.activities.keys(), 2))
         for activity_code1, activity_code2 in pairs:
-            STATUS = self.__order_bw_activity(activity_code1, activity_code2)
+            STATUS = self.order_bw_activity(activity_code1, activity_code2)
 
             if STATUS == 'FINE':
                 fines.append((activity_code1, activity_code2))
@@ -301,6 +301,8 @@ class Project:
         | A list of grids (i.e., the class of Grid).
     duration : int
         | The duration of the project that determined by the user.
+    duration_expected : int
+        | The expected duration of the project based on the current schedule.
     bag_of_activity_code : list
         | A list of activity codes that have been used in the project.
     schedule : list
@@ -318,6 +320,7 @@ class Project:
         self.activities = activities
         self.grids = grids
         self.duration = duration
+        self.duration_expected = ''
 
         self.bag_of_activity_code = []
         self.schedule = []
@@ -325,6 +328,7 @@ class Project:
 
         self.__initialize()
         self.__sort_grids()
+        self.__estimate_duration()
 
     def __len__(self):
         return max([work.day for work in self.schedule])+1
@@ -342,32 +346,6 @@ class Project:
                     continue
 
         self.bag_of_activity_code = list(set(bag_of_activity_code))
-
-    def search(self, activity_code, verbose=False):
-        '''
-        A method to find location and workday for an activity.
-        Input the code of the activity.
-
-        Attributes
-        ----------
-        activity_code : str
-            | The predetermined code of the activity that the user wants to search.
-        '''
-
-        here = []
-        for work in self.schedule:
-            if activity_code == work.activity.code:
-                here.append(work)
-
-        if verbose:
-            print('Fine {}:'.format(activity_code))
-            print('  | LOCATIN | DAY |')
-            for work in sorted(here, key=lambda x:x.day, reverse=False):
-                print('  | {:<7} | {:>3} |'.format(work.grid.location, work.day))
-        else:
-            pass
-
-        return here
 
     def __sort_grids(self):
         '''
@@ -392,6 +370,9 @@ class Project:
                 grids_same_worklen.pop(0)
 
         self.sorted_grids = sorted_by_dist
+
+    def __estimate_duration(self):
+        self.duration_expected = self.__len__()
 
     def __get_local_works(self, location):
         works = [work for work in self.schedule if work.grid.location == location]
@@ -541,22 +522,28 @@ class Project:
         self.schedule = updated_schedule
         self.__sort_grids()
 
-    def summary(self, sorted_grids=False):
+    def summary(self, duration=False, sorted_grids=False):
         '''
         Summarize the project schedule.
         '''
 
         print('============================================================')
         print('Project Summary')
-        print('  | Duration: {} days'.format(self.duration))
+
+        if duration:
+            self.__estimate_duration()
+            print('============================================================')
+            print('Duration')
+            print('  | Planned : {:,} days'.format(self.duration))
+            print('  | Expected: {:,} days'.format(self.duration_expected))
 
         if sorted_grids:
+            self.__sort_grids()
             print('============================================================')
             print('Sorted Grids')
             for grid in self.sorted_grids:
                 print('  | Location: ({:>2} {:>2} {:>2}) -> WorkLen: {:>3,}'.format(grid.x, grid.y, grid.z, len(grid.works)))
 
-        
     def schedule2df(self):
         '''
         Convert the schedule into a DataFrame format.
@@ -585,3 +572,29 @@ class Project:
         os.makedirs(os.path.dirname(fpath), exist_ok=True)
         schedule_df = self.schedule2df()
         schedule_df.to_excel(fpath, na_rep='', header=True, index=True)
+
+    def search(self, activity_code, verbose=False):
+        '''
+        A method to find location and workday for an activity.
+        Input the code of the activity.
+
+        Attributes
+        ----------
+        activity_code : str
+            | The predetermined code of the activity that the user wants to search.
+        '''
+
+        here = []
+        for work in self.schedule:
+            if activity_code == work.activity.code:
+                here.append(work)
+
+        if verbose:
+            print('Fine {}:'.format(activity_code))
+            print('  | LOCATION | DAY |')
+            for work in sorted(here, key=lambda x:x.day, reverse=False):
+                print('  | {:<7} | {:>3} |'.format(work.grid.location, work.day))
+        else:
+            pass
+
+        return here
