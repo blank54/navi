@@ -563,7 +563,7 @@ class Project:
         '''
 
         schedule_dict = defaultdict(dict)
-        for day in range(self.duration):
+        for day in range(self.duration_expected):
             schedule_dict[day] = {}
 
         for work in self.schedule:
