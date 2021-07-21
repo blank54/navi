@@ -346,8 +346,11 @@ class Project:
         for grid in self.grids:
             day = 0
             while True:
-                self.schedule.append(Work(grid=grid, day=day, activity=grid.works[day]))
-                day += 1
+                try:
+                    self.schedule.append(Work(grid=grid, day=day, activity=grid.works[day]))
+                    day += 1
+                except IndexError:
+                    break
 
     def __sort_grids(self):
         '''
