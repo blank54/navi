@@ -516,6 +516,7 @@ class Project:
 
             ## Once every grid passed the work assignment process, move to the next day.
             day += 1
+            print(day)
 
             ## If all activities were assigned to a single work, stop reschduling.
             if num_of_assigned_activity == self.__len__():
