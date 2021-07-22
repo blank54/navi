@@ -423,6 +423,14 @@ class Project:
 
                 ## Get the first remaining work on the grid.
                 next_activity = remaining_works[0].activity
+
+                if next_activity.code == 'M00009':
+                    next_work = remaining_works.pop(0)
+                    work = Work(grid=grid, day=1000, activity=next_work.activity)
+                    updated_schedule.append(work)
+                    activity_stack[work.activity.code] += 1
+                    num_of_assigned_activity += 1
+                    continue
                 
                 ## If productivity on the day is full, remain the grid blank and move to the next.
                 if not self.__check_productivity(activity_stack=activity_stack, next_activity=next_activity):
@@ -433,27 +441,99 @@ class Project:
                     continue
 
 
-        #선행완료 영역
-                # 해당 day에 특정(2,3,2)그리드에 특정작업(석고보드설치)이 배정되려면
-                # 특정작업(석고보드)의 선행완료 영역의 거리는 어느 그리드까지를 포함하는가
-                # 해당되는 그리드에 특정작업의 선행작업이 있는가
-                # 없으면 작업배정
-                # 있으면 작업밀기
-                # 선행완료 거리는 x,y값만 계산함. 평면거리만 고려.
+#########
+#7월22일 수도코드
 
-                # 예) 프로젝트 완료 마일스톤은 전구역의 작업이 완료되어야함.
-                # grid 0,0,0의 특정작업 프로젝트 완료는 계속 밀려서 끝에 배정
+                #생산성 제약
+                # day에 grid에 activity 배정
+                # activity의 productivity 확인
+                # productivity >= day에 배정된 activity 개수
+                # True : next grid
+                # False : next day
 
-                # 예) 그리드 # 1,3,4에 방수바탕면 작업은 선행완료 거리 3
-                # 그리드 1,3,4, x1,y3과 거리 3인 그리드는 (1,1),(1,2),(1,4), (1,5), (1,6),...등  에 선행작업을 확인
-                # (x-1)^2+(y-3)^2 < 3^2 인 그리드
-                # 선행작업이 없으면 작업배정
-                # 있으면 작업밀기
+#여기까지는 위에 코딩 된거죠?
 
-        #단면상 선후조건
+
+                # 선행완료 거리 제약
+                # day에 grid에 activity의 선행완료 거리값
+                # z=z and 선행완료 거리값 **2 >= (x-x)**2, (y-y)**2 인 grid_dist_range
+                # grid에 배정된 activity와 grid_dist_range 내 activity 선후관계
+                # if grid_dist_range 내 activity가 grid에 배정된 activity보다 선행작업이 있으면 :
+                # grid에 배정된 activity day+1 배정
+                # else :  day에 배정
+
+                # 생산성 제약 재검토_1
+                # day에 activity개수와 activity의 productivity 확인
+                # productivity >= day에 배정된 activity 개수
+                # True : next day
+                # False :
+                # day에 activity가 있는 그리드, count(remaining activity),
+                # 개수가 가장 적은 grid
+                # activity day+1에 배정
+
+                # 선행완료 거리 제약 재검토_1
+                # day에 grid에 activity의 선행완료 거리값
+                # z=z and 선행완료 거리값 **2 >= (x-x)**2, (y-y)**2 인 grid_dist_range
+                # grid에 배정된 activity와 grid_dist_range 내 activity 선후관계
+                # if grid_dist_range 내 activity가 grid에 배정된 activity보다 선행작업이 있으면 :
+                # grid에 배정된 activity 다음날 배정
+                # else :  day에 배정
+
+                # 생산성 제약 재검토_2
+                # day에 activity개수와 activity의 productivity 확인
+                # productivity >= day에 배정된 activity 개수
+                # True : next day
+                # False :
+                # day에 activity가 있는 그리드, count(remaining activity),
+                # 개수가 가장 적은 grid
+                # activity day+1에 배정
+
+                # 선행완료 거리 제약 재검토_2
+                # day에 grid에 activity의 선행완료 거리값
+                # z=z and 선행완료 거리값 **2 >= (x-x)**2, (y-y)**2 인 grid_dist_range
+                # grid에 배정된 activity와 grid_dist_range 내 activity 선후관계
+                # if grid_dist_range 내 activity가 grid에 배정된 activity보다 선행작업이 있으면 :
+                # grid에 배정된 activity 다음날 배정
+                # else :  day에 배정
+
+
+                # 단면 선후조건 제약
+                # if activity code가 D or R로 시작하는 activity :
+                    # if activity == activity and x==x and y==y and z!=z:
+                        #z가 큰 그리드가 선행
+                    # else: next
+                #else : next
+                #D or R로 시작하는 작업의 그리드 순서 리스트 작성
+
+                # 단면 선후조건 제약
+                # if activity code가 S or R로 시작하는 activity :
+                    # if activity == activity and x==x and y==y and z!=z:
+                        # z가 작은 그리드가 선행
+                # else: next
+                # else : next
+                # D or R로 시작하는 작업의 그리드 순서 리스트 작성
+
+                # 단면 선행완료 제약 적용
+                # day에 grid(x, y, -1)에 D00000작업은
+                # grid_dist_range = z=1 and 선행완료 거리값 **2 >= (x-x)**2, (y-y)**2인 grid list
+                # if grid_dist_range 내 activity가 grid에 배정된 activity보다 선행작업이 있으면 :
+                    # grid에 배정된 activity day+1 배정
+                # else :  day에 배정
+
+                # day에 grid(x, y, -2)에 D00000작업은
+                # grid_dist_range = z=-1 and 선행완료 거리값 **2 >= (x-x)**2, (y-y)**2인 grid list
+                # if grid_dist_range 내 activity가 grid에 배정된 activity보다 선행작업이 있으면 :
+                    # grid에 배정된 activity day+1 배정
+                # else :  day에 배정
+##############
+#7월 22일 나름대로 수도코드
+
+                    # x==x and y==y and z!=z 인 activity는 z값이 큰 것이 day에 배정
+
+
                 # 터파기, 스트러트 작업은 동일한 x,y에서 Z축의 값이 1, -1, -2,...으로 진행되어야 함. (지하공사는 위에서 아래로 진행하기 때문)
                 # 지하 1층에 터파기 작업이 일정 영역이상 진행되어야 지하2층 터파기 작업이 가능(선행완료영역 제약)
-                # if Activity ID첫 문자가 D or R인 경우, z축 값 순서 -1씩 더하여 진행
+
                 # 터파기 시  흙막이 주변 소단형성, 스트러트, 어스앵커 등 흙막이 지지 작업 완료 후 소단 터파기 진행가능
                 # 예) 1층 터파기작업 9개 그리드 완료(1,1,1 ~ 3,3,1), 그리드 (1,1,1), (2,1,1), (3,1,1), (1,2,1),.(1,3,1) 소단 형성
                 # 흙막이 지지 작업 완료 후 소단 제거(1,1,1)
