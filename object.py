@@ -646,7 +646,7 @@ class Project:
         schedule_df = pd.DataFrame(schedule_dict)
         return schedule_df
 
-    def export(self, fpath):
+    def export(self, fpath, convert=True):
         '''
         Export the project schedule in the format of ".xlsx".
 
@@ -656,8 +656,10 @@ class Project:
             | FilePath for the exported schedule.
         '''
 
+        if convert:
+            schedule_df = self.schedule2df()
+
         os.makedirs(os.path.dirname(fpath), exist_ok=True)
-        schedule_df = self.schedule2df()
         schedule_df.to_excel(fpath, na_rep='', header=True, index=True)
 
     def search(self, activity_code, verbose=False):
