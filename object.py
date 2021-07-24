@@ -411,7 +411,6 @@ class Project:
         day = 0
         num_of_assigned_activity = 0
         while True:
-            print(day)
             ## Initialize activity stack.
             activity_stack = {activity_code: 0 for activity_code in self.activities.keys()}
 
@@ -423,14 +422,6 @@ class Project:
 
                 ## Get the first remaining work on the grid.
                 next_activity = remaining_works[0].activity
-
-                if next_activity.code == 'M00009':
-                    next_work = remaining_works.pop(0)
-                    work = Work(grid=grid, day=1000, activity=next_work.activity)
-                    updated_schedule.append(work)
-                    activity_stack[work.activity.code] += 1
-                    num_of_assigned_activity += 1
-                    continue
                 
                 ## If productivity on the day is full, remain the grid blank and move to the next.
                 if not self.__check_productivity(activity_stack=activity_stack, next_activity=next_activity):
@@ -596,7 +587,6 @@ class Project:
 
             ## Once every grid passed the work assignment process, move to the next day.
             day += 1
-            print(day)
 
             ## If all activities were assigned to a single work, stop reschduling.
             if num_of_assigned_activity == self.__len__():
