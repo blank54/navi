@@ -173,34 +173,46 @@ def activity_productivity_constraint(schedule, work_plan):
 
 
 ## Update schedule
+def update(original_schedule):
+
+    ## Work Plans
+    work_plan = calculate_activity_work_plan(original_schedule)
+
+    ## Activity Order Constraint
+    updated_schedule = deepcopy(activity_order_constraint(original_schedule))
+
+    ## Activity Productivity Constraint
+    updated_schedule = deepcopy(activity_productivity_constraint(updated_schedule, work_plan))
+
+    return updated_schedule
+
+def export_schedule(schedule, iteration):
+    global project
+
+    project.schedule = deepcopy(schedule)
+    project.export(fpath=navipath.schedule(case_num, 'updated_I-{:03,d}'.format(iteration)))
+
 def update_schedule(project):
     print('============================================================')
     print('Update schedule')
+
     ## Duplicated Activity Normalization
-    schedule = defaultdict(dict)
+    original_schedule = defaultdict(dict)
     for location in project.schedule:
-        schedule[location] = deepcopy(norlamlize_duplicated_activity(local_schedule=project.schedule[location]))
+        original_schedule[location] = deepcopy(norlamlize_duplicated_activity(local_schedule=project.schedule[location]))
 
     iteration = 0
     while True:
         print('\r  | Iteration: {:03,d}'.format(iteration), end='')
-        work_plan = calculate_activity_work_plan(schedule)
+        updated_schedule = deepcopy(update(original_schedule))
+        export_schedule(updated_schedule, iteration)
 
-        ## Activity Order Constraint
-        schedule = deepcopy(activity_order_constraint(schedule))
-
-        ## Activity Productivity Constraint
-        schedule = deepcopy(activity_productivity_constraint(schedule, work_plan))
-
-        ## Assign updated schedule to project
-        project.export(fpath=navipath.schedule(case_num, 'updated_I-{:03,d}'.format(iteration)))
-
-        if compare_schedule(project.schedule, schedule) == 'same':
+        if compare_schedule(original_schedule, updated_schedule) == 'same':
             break
         else:
-            project.schedule = schedule
+            original_schedule = deepcopy(updated_schedule)
             iteration += 1
-        
+
     print('\n  | Done')
 
 
