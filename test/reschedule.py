@@ -17,15 +17,44 @@ from copy import deepcopy
 from collections import defaultdict, Counter
 
 
+## Project Management
 def load_project(case_num):
     with open(navipath.proj(case_num), 'rb') as f:
         project = pk.load(f)
 
-    project.export(fpath=navipath.schedule(case_num, 'step_0_initial'))
+    project.export(fpath=navipath.schedule(case_num, 'initial'))
     return project
 
 def sort_local_schedule(local_schedule):
     return sorted(local_schedule.items(), key=lambda x:x[1], reverse=False)
+
+def calculate_activity_work_plan(schedule):
+    work_plan = defaultdict(list)
+    for location in schedule:
+        for activity_code, day in schedule[location].items():
+            work_plan[day].append(activity_code)
+
+    return work_plan
+
+def compare_schedule(schedule_1, schedule_2):
+    if schedule_1.keys() != schedule_2.keys():
+        return 'different'
+    else:
+        pass
+
+    for location in schedule_1.keys():
+        if len(schedule_1[location]) != len(schedule_2[location]):
+            return 'different'
+        else:
+            pass
+
+        for activity_code, day in schedule_1[location].items():
+            if day != schedule_2[location][activity_code]:
+                return 'different'
+            else:
+                continue
+
+    return 'same'
 
 
 ## Duplicated Activity Normalization
@@ -93,6 +122,15 @@ def push_workdays_reordering(local_schedule):
 
     return local_schedule_modi
 
+def activity_order_constraint(schedule):
+    for location in schedule:
+        if check_activity_order_on_single_location(local_schedule=schedule[location]) == 'conflict':
+            schedule[location] = deepcopy(push_workdays_reordering(local_schedule=schedule[location]))
+        else:
+            continue
+
+    return schedule
+
 
 ## Activity Productivity Constraint
 def check_productivity_overload(activity_code, count):
@@ -101,64 +139,75 @@ def check_productivity_overload(activity_code, count):
     else:
         return 'fine'
 
-def push_workdays_uniformly(where, after):
-    global project
-
-    schedule_to_modi = deepcopy(project.schedule)
-    for activity_code in schedule_to_modi[where]:
-        workday = schedule_to_modi[where][activity_code]
+def push_workdays_uniformly(schedule, location, after):
+    schedule_to_modi = deepcopy(schedule)
+    for activity_code in schedule_to_modi[location]:
+        workday = schedule_to_modi[location][activity_code]
         if workday >= after:
-            schedule_to_modi[where][activity_code] += 1
+            schedule_to_modi[location][activity_code] += 1
     return schedule_to_modi
 
+def activity_productivity_constraint(schedule, work_plan):
+    global project
 
-## Update schedule
-def update_schedule(project):
-    todo_when = defaultdict(list)
-
-    for location in project.schedule:
-        for activity_code, day in project.schedule[location].items():
-            todo_when[day].append(activity_code)
-
-    ## Duplicated Activity Normalization
-    for location in project.schedule:
-        project.schedule[location] = deepcopy(norlamlize_duplicated_activity(local_schedule=project.schedule[location]))
-
-    ## Activity Order Constraint
-    for location in project.schedule:
-        if check_activity_order_on_single_location(local_schedule=project.schedule[location]) == 'conflict':
-            project.schedule[location] = deepcopy(push_workdays_reordering(local_schedule=project.schedule[location]))
-        else:
-            continue
-    project.export(fpath=navipath.schedule(case_num, 'step_1_order'))
-
-    ## Activity Productivity Constraint
-    for day, works in sorted(todo_when.items(), key=lambda x:x[0], reverse=False):
+    for day, works in sorted(work_plan.items(), key=lambda x:x[0], reverse=False):
         activity_counter = Counter(works)
         for activity_code, count in activity_counter.items():
             if check_productivity_overload(activity_code, count) == 'overloaded':
                 num_overloaded = (count-project.activities[activity_code].productivity)
-                
+
                 target_location_list = []
-                for location in project.schedule.keys():
+                for location in schedule.keys():
                     try:
-                        if project.schedule[location][activity_code] == day:
+                        if schedule[location][activity_code] == day:
                             target_location_list.append(location)
                     except KeyError:
                         continue
 
                 for target_location in target_location_list[:num_overloaded]:
-                    project.schedule = deepcopy(push_workdays_uniformly(where=target_location, after=day))
+                    schedule = deepcopy(push_workdays_uniformly(schedule, location=target_location, after=day))
             else:
                 continue
-    project.export(fpath=navipath.schedule(case_num, 'step_2_productivity'))
-    
+
+    return schedule
+
+
+## Update schedule
+def update_schedule(project):
+    print('============================================================')
+    print('Update schedule')
+    ## Duplicated Activity Normalization
+    schedule = defaultdict(dict)
+    for location in project.schedule:
+        schedule[location] = deepcopy(norlamlize_duplicated_activity(local_schedule=project.schedule[location]))
+
+    iteration = 0
+    while True:
+        print('\r  | Iteration: {:03,d}'.format(iteration), end='')
+        work_plan = calculate_activity_work_plan(schedule)
+
+        ## Activity Order Constraint
+        schedule = deepcopy(activity_order_constraint(schedule))
+
+        ## Activity Productivity Constraint
+        schedule = deepcopy(activity_productivity_constraint(schedule, work_plan))
+
+        ## Assign updated schedule to project
+        project.export(fpath=navipath.schedule(case_num, 'updated_I-{:03,d}'.format(iteration)))
+
+        if compare_schedule(project.schedule, schedule) == 'same':
+            break
+        else:
+            project.schedule = schedule
+            iteration += 1
+        
+    print('\n  | Done')
+
 
 if __name__ == '__main__':
     ## Load project
     case_num = '03'
     project = load_project(case_num=case_num)
-    # project.summary(duration=True, sorted_grids=True)
 
     ## Update schedule
     update_schedule(project)
