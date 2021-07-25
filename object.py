@@ -11,10 +11,9 @@ from naviutil import NaviFunc
 navifunc = NaviFunc()
 
 import random
+import itertools
 import pandas as pd
 from copy import deepcopy
-import itertools
-from itertools import combinations
 from collections import defaultdict
 
 
@@ -180,7 +179,7 @@ class NaviSystem:
         conflicts = []
         errors = []
 
-        pairs = list(combinations(self.activities.keys(), 2))
+        pairs = list(itertools.combinations(self.activities.keys(), 2))
         for activity_code1, activity_code2 in pairs:
             STATUS = self.order_bw_activity(activity_code1, activity_code2)
 
@@ -324,7 +323,7 @@ class Project:
         self.duration_expected = ''
 
         self.bag_of_activity_code = list(set(itertools.chain(*[[activity.code for activity in grid.works] for grid in self.grids])))
-        self.schedule = []
+        self.schedule = {}
         self.sorted_grids = []
 
         self.__initialize()
@@ -344,10 +343,12 @@ class Project:
         '''
 
         for grid in self.grids:
+            self.schedule[grid.location] = {}
+
             day = 0
             while True:
                 try:
-                    self.schedule.append(Work(grid=grid, day=day, activity=grid.works[day]))
+                    self.schedule[grid.location][grid.works[day].code] = day
                     day += 1
                 except IndexError:
                     break
@@ -381,55 +382,89 @@ class Project:
         Estimate the project duration based on the current schedule.
         '''
 
-        self.duration_expected = max([work.day for work in self.schedule])+1
+        duration_expected = 0
+        for location in self.schedule:
+            last_day = max(list(self.schedule[location].values()))
+            if duration_expected <= last_day:
+                duration_expected = deepcopy(last_day)
 
-    def __get_local_works(self, location):
-        works = [work for work in self.schedule if work.grid.location == location]
-        sorted_works = sorted(works, key=lambda x:x.day, reverse=False)
-        return sorted_works
+        self.duration_expected = duration_expected
 
-    def __check_productivity(self, activity_stack, next_activity):
+    def summary(self, duration=False, sorted_grids=False):
         '''
-        If the number of activities existing in the stack is smaller than the activity's productivity, return True.
+        Summarize the project schedule.
         '''
 
-        if activity_stack[next_activity.code] < self.activities[next_activity.code].productivity:
-            return True
-        else:
-            return False
+        print('============================================================')
+        print('Project Summary')
 
-    def __check_pre_dist(self):
-        return True
+        if duration:
+            self.__estimate_duration()
+            print('============================================================')
+            print('Duration')
+            print('  | Planned : {:,} days'.format(self.duration))
+            print('  | Expected: {:,} days'.format(self.duration_expected))
 
-    def reschedule(self):
-        updated_schedule = []
-
-        local_works = {}
-        for grid in self.grids:
-            local_works[grid.location] = self.__get_local_works(location=grid.location)
-
-        day = 0
-        num_of_assigned_activity = 0
-        while True:
-            ## Initialize activity stack.
-            activity_stack = {activity_code: 0 for activity_code in self.activities.keys()}
-
-            ## Try to assign a work on each grid.
+        if sorted_grids:
+            self.__sort_grids()
+            print('============================================================')
+            print('Sorted Grids')
             for grid in self.sorted_grids:
-                remaining_works = local_works[grid.location]
-                if not remaining_works:
-                    continue
+                print('  | Location: ({:>2} {:>2} {:>2}) -> WorkLen: {:>3,}'.format(grid.x, grid.y, grid.z, len(grid.works)))
 
-                ## Get the first remaining work on the grid.
-                next_activity = remaining_works[0].activity
-                
-                ## If productivity on the day is full, remain the grid blank and move to the next.
-                if not self.__check_productivity(activity_stack=activity_stack, next_activity=next_activity):
-                    continue
+    def schedule2df(self):
+        '''
+        Convert the schedule into a DataFrame format.
+        '''
 
-                ## TODO: If predecessors around not over yet, remain the grid blank and move to the next.
-                if not self.__check_pre_dist():
-                    continue
+        schedule_dict = defaultdict(dict)
+        for location in self.schedule:
+            for activity_code, day in self.schedule[location].items():
+                schedule_dict[day][location] = activity_code
+
+        schedule_df = pd.DataFrame(schedule_dict)
+        return schedule_df.reindex(sorted(schedule_df.columns), axis=1)
+
+    def export(self, fpath):
+        '''
+        Export the project schedule in the format of ".xlsx".
+
+        Attributes
+        ----------
+        fpath : str
+            | FilePath for the exported schedule.
+        '''
+
+        schedule_df = self.schedule2df()
+        os.makedirs(os.path.dirname(fpath), exist_ok=True)
+        schedule_df.to_excel(fpath, na_rep='', header=True, index=True)
+
+    def search(self, activity_code, verbose=False):
+        '''
+        A method to find location and workday for an activity.
+        Input the code of the activity.
+
+        Attributes
+        ----------
+        activity_code : str
+            | The predetermined code of the activity that the user wants to search.
+        '''
+
+        here = []
+        for location in self.schedule:
+            if activity_code in self.schedule[location].keys():
+                day = self.schedule[location][activity_code]
+                here.append((location, day))
+
+        if verbose:
+            print('Find {}:'.format(activity_code))
+            print('  | LOCATION | DAY |')
+            for location, day in sorted(here, key=lambda x:x[1], reverse=False):
+                print('  | {:<7} | {:>3} |'.format(location, day))
+        else:
+            pass
+
+        return here
 
 
 #########
@@ -565,123 +600,3 @@ class Project:
                 # 생산성 조정 알림
                 # 조정전 결과 보여주기
                 # 추천 생산성 조정 안 1,2,3 보여주기
-
-
-                ## >>WORK HERE<<
-                '''
-                Develop your code here.
-                Then, run 'test/reschedule.py' to test the code.
-                You can find the result directories on 'naviutil.py'
-                '''
-                "test1"
-
-
-
-
-                ## If all of the constraints are oka, assign the work.
-                next_work = remaining_works.pop(0)
-                work = Work(grid=grid, day=day, activity=next_work.activity)
-                updated_schedule.append(work)
-                activity_stack[work.activity.code] += 1
-                num_of_assigned_activity += 1
-
-            ## Once every grid passed the work assignment process, move to the next day.
-            day += 1
-
-            ## If all activities were assigned to a single work, stop reschduling.
-            if num_of_assigned_activity == self.__len__():
-                break
-
-        ## TODO: Assign same works to close grids.
-
-        ## TODO: Check activity orders.
-
-        ## TODO: Push some duration-free works to be conducted in the same day.
-
-        ## TODO: Return error if any work remains in local_works.
-
-        ## Update the schedule and sort the grids again.
-        self.schedule = updated_schedule
-        self.__sort_grids()
-        self.__estimate_duration()
-
-        ## TODO: If duration problem occurs, squeeze the schedule.
-        if self.duration_expected > self.duration:
-            print('INFO: The schedule will be overdue! Please do some actions!')
-
-    def summary(self, duration=False, sorted_grids=False):
-        '''
-        Summarize the project schedule.
-        '''
-
-        print('============================================================')
-        print('Project Summary')
-
-        if duration:
-            self.__estimate_duration()
-            print('============================================================')
-            print('Duration')
-            print('  | Planned : {:,} days'.format(self.duration))
-            print('  | Expected: {:,} days'.format(self.duration_expected))
-
-        if sorted_grids:
-            self.__sort_grids()
-            print('============================================================')
-            print('Sorted Grids')
-            for grid in self.sorted_grids:
-                print('  | Location: ({:>2} {:>2} {:>2}) -> WorkLen: {:>3,}'.format(grid.x, grid.y, grid.z, len(grid.works)))
-
-    def schedule2df(self):
-        '''
-        Convert the schedule into a DataFrame format.
-        '''
-
-        schedule_dict = defaultdict(dict)
-        for day in range(self.duration_expected):
-            schedule_dict[day] = {}
-
-        for work in self.schedule:
-            schedule_dict[work.day][work.grid.location] = work.activity.code
-
-        schedule_df = pd.DataFrame(schedule_dict)
-        return schedule_df
-
-    def export(self, fpath):
-        '''
-        Export the project schedule in the format of ".xlsx".
-
-        Attributes
-        ----------
-        fpath : str
-            | FilePath for the exported schedule.
-        '''
-
-        os.makedirs(os.path.dirname(fpath), exist_ok=True)
-        schedule_df = self.schedule2df()
-        schedule_df.to_excel(fpath, na_rep='', header=True, index=True)
-
-    def search(self, activity_code, verbose=False):
-        '''
-        A method to find location and workday for an activity.
-        Input the code of the activity.
-
-        Attributes
-        ----------
-        activity_code : str
-            | The predetermined code of the activity that the user wants to search.
-        '''
-
-        here = []
-        for work in self.schedule:
-            if activity_code == work.activity.code:
-                here.append(work)
-
-        if verbose:
-            print('Fine {}:'.format(activity_code))
-            print('  | LOCATION | DAY |')
-            for work in sorted(here, key=lambda x:x.day, reverse=False):
-                print('  | {:<7} | {:>3} |'.format(work.grid.location, work.day))
-        else:
-            pass
-
-        return here

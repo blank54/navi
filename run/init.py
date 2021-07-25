@@ -67,7 +67,7 @@ def init_activity_order(navisystem):
         navisystem.activities[predecessor_code] = predecessor_activity
         navisystem.activities[successor_code] = successor_activity
 
-    print('==================================================')
+    print('============================================================')
     print('Errors on Activities')
     if key_errors:
         key_errors = list(set(key_errors))
@@ -110,7 +110,7 @@ def save_navisystem(navisystem):
     with open(navipath.navisystem, 'wb') as f:
         pk.dump(navisystem, f)
 
-    print('==================================================')
+    print('============================================================')
     print('Save NaviSystem:')
     print('  | FilePath: {}'.format(navipath.navisystem))
     print('  | # of Activities: {}'.format(len(navisystem)))
@@ -141,7 +141,7 @@ def define_works(navisystem, case_data):
 def initiate_project(case_num, duration):
     navisystem = load_navisystem()
 
-    print('==================================================')
+    print('============================================================')
     print('Init Project')
 
     case_data = pd.read_excel(navipath.case(case_num))
@@ -160,7 +160,7 @@ def save_project(case_num, project):
     with open(navipath.proj(case_num), 'wb') as f:
         pk.dump(project, f)
 
-    print('==================================================')
+    print('============================================================')
     print('Save Project:')
     print('  | FilePath: {}'.format(navipath.proj(case_num)))
 
@@ -172,7 +172,7 @@ if __name__ == '__main__':
     save_navisystem(navisystem=navisystem_ordered)
 
     ## Project Constraints
-    case_num = '01'
+    case_num = '03'
     duration = 60
     
     ## Init Project
