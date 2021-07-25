@@ -11,10 +11,9 @@ from naviutil import NaviFunc
 navifunc = NaviFunc()
 
 import random
+import itertools
 import pandas as pd
 from copy import deepcopy
-import itertools
-from itertools import combinations
 from collections import defaultdict
 
 
@@ -180,7 +179,7 @@ class NaviSystem:
         conflicts = []
         errors = []
 
-        pairs = list(combinations(self.activities.keys(), 2))
+        pairs = list(itertools.combinations(self.activities.keys(), 2))
         for activity_code1, activity_code2 in pairs:
             STATUS = self.order_bw_activity(activity_code1, activity_code2)
 
@@ -324,7 +323,7 @@ class Project:
         self.duration_expected = ''
 
         self.bag_of_activity_code = list(set(itertools.chain(*[[activity.code for activity in grid.works] for grid in self.grids])))
-        self.schedule = []
+        self.schedule = {}
         self.sorted_grids = []
 
         self.__initialize()
@@ -344,10 +343,12 @@ class Project:
         '''
 
         for grid in self.grids:
+            self.schedule[grid.location] = {}
+
             day = 0
             while True:
                 try:
-                    self.schedule.append(Work(grid=grid, day=day, activity=grid.works[day]))
+                    self.schedule[grid.location][grid.works[day].code] = day
                     day += 1
                 except IndexError:
                     break
@@ -381,233 +382,13 @@ class Project:
         Estimate the project duration based on the current schedule.
         '''
 
-        self.duration_expected = max([work.day for work in self.schedule])+1
+        duration_expected = 0
+        for location in self.schedule:
+            last_day = max(list(self.schedule[location].values()))
+            if duration_expected <= last_day:
+                duration_expected = deepcopy(last_day)
 
-    def __get_local_works(self, location):
-        works = [work for work in self.schedule if work.grid.location == location]
-        sorted_works = sorted(works, key=lambda x:x.day, reverse=False)
-        return sorted_works
-
-    def __check_productivity(self, activity_stack, next_activity):
-        '''
-        If the number of activities existing in the stack is smaller than the activity's productivity, return True.
-        '''
-
-        if activity_stack[next_activity.code] < self.activities[next_activity.code].productivity:
-            return True
-        else:
-            return False
-
-    def __check_pre_dist(self):
-        return True
-
-    def reschedule(self):
-        updated_schedule = []
-
-        local_works = {}
-        for grid in self.grids:
-            local_works[grid.location] = self.__get_local_works(location=grid.location)
-
-        day = 0
-        num_of_assigned_activity = 0
-        while True:
-            ## Initialize activity stack.
-            activity_stack = {activity_code: 0 for activity_code in self.activities.keys()}
-
-            ## Try to assign a work on each grid.
-            for grid in self.sorted_grids:
-                remaining_works = local_works[grid.location]
-                if not remaining_works:
-                    continue
-
-                ## Get the first remaining work on the grid.
-                next_activity = remaining_works[0].activity
-                
-                ## If productivity on the day is full, remain the grid blank and move to the next.
-                if not self.__check_productivity(activity_stack=activity_stack, next_activity=next_activity):
-                    continue
-
-                ## TODO: If predecessors around not over yet, remain the grid blank and move to the next.
-                if not self.__check_pre_dist():
-                    continue
-
-
-#########
-#7월22일 수도코드
-
-                #생산성 제약
-                # day에 grid에 activity 배정
-                # activity의 productivity 확인
-                # productivity >= day에 배정된 activity 개수
-                # True : next grid
-                # False : next day
-
-#여기까지는 위에 코딩 된거죠?
-
-
-                # 선행완료 거리 제약
-                # day에 grid에 activity의 선행완료 거리값
-                # z=z and 선행완료 거리값 **2 >= (x-x)**2, (y-y)**2 인 grid_dist_range
-                # grid에 배정된 activity와 grid_dist_range 내 activity 선후관계
-                # if grid_dist_range 내 activity가 grid에 배정된 activity보다 선행작업이 있으면 :
-                # grid에 배정된 activity day+1 배정
-                # else :  day에 배정
-
-                # 생산성 제약 재검토_1
-                # day에 activity개수와 activity의 productivity 확인
-                # productivity >= day에 배정된 activity 개수
-                # True : next day
-                # False :
-                # day에 activity가 있는 그리드, count(remaining activity),
-                # 개수가 가장 적은 grid
-                # activity day+1에 배정
-
-                # 선행완료 거리 제약 재검토_1
-                # day에 grid에 activity의 선행완료 거리값
-                # z=z and 선행완료 거리값 **2 >= (x-x)**2, (y-y)**2 인 grid_dist_range
-                # grid에 배정된 activity와 grid_dist_range 내 activity 선후관계
-                # if grid_dist_range 내 activity가 grid에 배정된 activity보다 선행작업이 있으면 :
-                # grid에 배정된 activity 다음날 배정
-                # else :  day에 배정
-
-                # 생산성 제약 재검토_2
-                # day에 activity개수와 activity의 productivity 확인
-                # productivity >= day에 배정된 activity 개수
-                # True : next day
-                # False :
-                # day에 activity가 있는 그리드, count(remaining activity),
-                # 개수가 가장 적은 grid
-                # activity day+1에 배정
-
-                # 선행완료 거리 제약 재검토_2
-                # day에 grid에 activity의 선행완료 거리값
-                # z=z and 선행완료 거리값 **2 >= (x-x)**2, (y-y)**2 인 grid_dist_range
-                # grid에 배정된 activity와 grid_dist_range 내 activity 선후관계
-                # if grid_dist_range 내 activity가 grid에 배정된 activity보다 선행작업이 있으면 :
-                # grid에 배정된 activity 다음날 배정
-                # else :  day에 배정
-
-
-                # 단면 선후조건 제약
-                # if activity code가 D or R로 시작하는 activity :
-                    # if activity == activity and x==x and y==y and z!=z:
-                        #z가 큰 그리드가 선행
-                    # else: next
-                #else : next
-                #D or R로 시작하는 작업의 그리드 순서 리스트 작성
-
-                # 단면 선후조건 제약
-                # if activity code가 S or R로 시작하는 activity :
-                    # if activity == activity and x==x and y==y and z!=z:
-                        # z가 작은 그리드가 선행
-                # else: next
-                # else : next
-                # D or R로 시작하는 작업의 그리드 순서 리스트 작성
-
-                # 단면 선행완료 제약 적용
-                # day에 grid(x, y, -1)에 D00000작업은
-                # grid_dist_range = z=1 and 선행완료 거리값 **2 >= (x-x)**2, (y-y)**2인 grid list
-                # if grid_dist_range 내 activity가 grid에 배정된 activity보다 선행작업이 있으면 :
-                    # grid에 배정된 activity day+1 배정
-                # else :  day에 배정
-
-                # day에 grid(x, y, -2)에 D00000작업은
-                # grid_dist_range = z=-1 and 선행완료 거리값 **2 >= (x-x)**2, (y-y)**2인 grid list
-                # if grid_dist_range 내 activity가 grid에 배정된 activity보다 선행작업이 있으면 :
-                    # grid에 배정된 activity day+1 배정
-                # else :  day에 배정
-##############
-#7월 22일 나름대로 수도코드
-
-                    # x==x and y==y and z!=z 인 activity는 z값이 큰 것이 day에 배정
-
-
-                # 터파기, 스트러트 작업은 동일한 x,y에서 Z축의 값이 1, -1, -2,...으로 진행되어야 함. (지하공사는 위에서 아래로 진행하기 때문)
-                # 지하 1층에 터파기 작업이 일정 영역이상 진행되어야 지하2층 터파기 작업이 가능(선행완료영역 제약)
-
-                # 터파기 시  흙막이 주변 소단형성, 스트러트, 어스앵커 등 흙막이 지지 작업 완료 후 소단 터파기 진행가능
-                # 예) 1층 터파기작업 9개 그리드 완료(1,1,1 ~ 3,3,1), 그리드 (1,1,1), (2,1,1), (3,1,1), (1,2,1),.(1,3,1) 소단 형성
-                # 흙막이 지지 작업 완료 후 소단 제거(1,1,1)
-                # 터파기 작업 거리 2인 경우 (2,2,-1) 터파기 진행 가능, 그외 작업 진행 불가
-
-
-                # 기존 공정표에 작업으로 표현하지 않고 전문업체의 경험과 관리자의 경험으로 수행하는 작업들을 정의 필요.
-                # 단점일 수 있으나,BIM 모델링을 하지 않는 객체에 대해 데이터를 넣을 수 있는 그릇이 될 수 있음.
-
-
-
-                # 골조공사는 동일한 x, y에서 z축의 값이 -n, -n+1, ...-2,-1,1 순으로 진행되어야 함.. (골조공사는 아래에서 위로 진행하기 때문)
-
-
-                # 지하슬래브를 터파기순서대로 진행하는 지하역타 공법 적용방법, ID D or R적용
-                # if Activity ID첫 문자가 D or R인 경우, z축 값 순서 -1씩 더하여 진행
-
-
-                # 지하수직재와 지상 골조를 별도로 시공하는 탑다운 공법 적용방법
-                # 1층 수직재의 시작점을 제시하는 마일스톤 작업 배정하여 마일스톤 작업 이후 지상골조는 골조공사 기준에 따라 진행하도록 함
-                # 골조공사는 동일한 x, y에서 z축의 값이 -n, -n+1, ...-2,-1,1 순으로 진행되어야 함.. (골조공사는 아래에서 위로 진행하기 때문)
-
-
-                # 오프닝, 가시설로 골조공사가 일부구간의 진행이 불가하여 해당 공간을 제외하고 상층부 공사를 진행해야하는 경우 적용방법
-                # 지상층 골조가 완료되고 타워크레인이 해체되어야 작업진행 가능
-                # 공법에 따라 층간 선후 조건없이 진행할 수 있음(무지주 공법적용시, 데크플레이트),
-                # 하루에 여러층 작업 가능
-                # 별도의 업무레이어 배정하여 타워크레인 등 오프닝 계획에 반영
-                # 예) 3,4,3 그리드에 타워크레인 설치로 오프닝
-                # 3,4,3 그리드에는 골조공사 업무레이어, 타워크레인 업무레이어, 오프닝 골조마감 업무레이어 배정
-                # 오프닝 골조 마감 업무레이어는 단면상 선후 조건 제외
-
-        # 필연적으로 연속되는 작업
-                # if id앞 5자리가 같으면 맨뒤자리 순서에 따라 다음날 작업으로 필히 배정한다.
-                # 예) 레미콘타설 후 양생은 필연적인 연속후행관계
-
-        # 전체일정 내 완료 불가시
-                # 생산성 조정 알림
-                # 조정전 결과 보여주기
-                # 추천 생산성 조정 안 1,2,3 보여주기
-
-
-                ## >>WORK HERE<<
-                '''
-                Develop your code here.
-                Then, run 'test/reschedule.py' to test the code.
-                You can find the result directories on 'naviutil.py'
-                '''
-                "test1"
-
-
-
-
-                ## If all of the constraints are oka, assign the work.
-                next_work = remaining_works.pop(0)
-                work = Work(grid=grid, day=day, activity=next_work.activity)
-                updated_schedule.append(work)
-                activity_stack[work.activity.code] += 1
-                num_of_assigned_activity += 1
-
-            ## Once every grid passed the work assignment process, move to the next day.
-            day += 1
-
-            ## If all activities were assigned to a single work, stop reschduling.
-            if num_of_assigned_activity == self.__len__():
-                break
-
-        ## TODO: Assign same works to close grids.
-
-        ## TODO: Check activity orders.
-
-        ## TODO: Push some duration-free works to be conducted in the same day.
-
-        ## TODO: Return error if any work remains in local_works.
-
-        ## Update the schedule and sort the grids again.
-        self.schedule = updated_schedule
-        self.__sort_grids()
-        self.__estimate_duration()
-
-        ## TODO: If duration problem occurs, squeeze the schedule.
-        if self.duration_expected > self.duration:
-            print('INFO: The schedule will be overdue! Please do some actions!')
+        self.duration_expected = duration_expected
 
     def summary(self, duration=False, sorted_grids=False):
         '''
@@ -637,16 +418,14 @@ class Project:
         '''
 
         schedule_dict = defaultdict(dict)
-        for day in range(self.duration_expected):
-            schedule_dict[day] = {}
-
-        for work in self.schedule:
-            schedule_dict[work.day][work.grid.location] = work.activity.code
+        for location in self.schedule:
+            for activity_code, day in self.schedule[location].items():
+                schedule_dict[day][location] = activity_code
 
         schedule_df = pd.DataFrame(schedule_dict)
-        return schedule_df
+        return schedule_df.reindex(sorted(schedule_df.columns), axis=1)
 
-    def export(self, fpath, convert=True):
+    def export(self, fpath):
         '''
         Export the project schedule in the format of ".xlsx".
 
@@ -656,9 +435,7 @@ class Project:
             | FilePath for the exported schedule.
         '''
 
-        if convert:
-            schedule_df = self.schedule2df()
-
+        schedule_df = self.schedule2df()
         os.makedirs(os.path.dirname(fpath), exist_ok=True)
         schedule_df.to_excel(fpath, na_rep='', header=True, index=True)
 
@@ -674,15 +451,16 @@ class Project:
         '''
 
         here = []
-        for work in self.schedule:
-            if activity_code == work.activity.code:
-                here.append(work)
+        for location in self.schedule:
+            if activity_code in self.schedule[location].keys():
+                day = self.schedule[location][activity_code]
+                here.append((location, day))
 
         if verbose:
-            print('Fine {}:'.format(activity_code))
+            print('Find {}:'.format(activity_code))
             print('  | LOCATION | DAY |')
-            for work in sorted(here, key=lambda x:x.day, reverse=False):
-                print('  | {:<7} | {:>3} |'.format(work.grid.location, work.day))
+            for location, day in sorted(here, key=lambda x:x[1], reverse=False):
+                print('  | {:<7} | {:>3} |'.format(location, day))
         else:
             pass
 

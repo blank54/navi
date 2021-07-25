@@ -26,11 +26,8 @@ class NaviPath:
     def proj(self, case_num):
         return os.path.sep.join((self.fdir_proj, 'proj_{}.pk'.format(case_num)))
 
-    def schedule(self, case_num):
-        return os.path.sep.join((self.fdir_schedule, 'schedule_{}_before.xlsx'.format(case_num)))
-
-    def reschedule(self, case_num):
-        return os.path.sep.join((self.fdir_schedule, 'schedule_{}_after.xlsx'.format(case_num)))
+    def schedule(self, case_num, note):
+        return os.path.sep.join((self.fdir_schedule, 'schedule_N-{}_C-{}.xlsx'.format(case_num, note)))
 
 
 class NaviFunc:

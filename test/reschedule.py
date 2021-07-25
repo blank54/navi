@@ -21,14 +21,35 @@ def load_project(case_num):
     with open(navipath.proj(case_num), 'rb') as f:
         project = pk.load(f)
 
-    project.export(fpath=navipath.schedule(case_num))
+    project.export(fpath=navipath.schedule(case_num, 'step_0_initial'))
     return project
 
+def sort_local_schedule(local_schedule):
+    return sorted(local_schedule.items(), key=lambda x:x[1], reverse=False)
+
+
+## Duplicated Activity Normalization
+def norlamlize_duplicated_activity(local_schedule):
+    local_schedule_modi = {}
+
+    day = 0
+    for activity_code in local_schedule.keys():
+        if activity_code not in local_schedule_modi.keys():
+            local_schedule_modi[activity_code] = day
+            day += 1
+        else:
+            continue
+
+    return local_schedule_modi
+
+
+## Activity Order Constraint
 def check_activity_order_on_single_location(local_schedule):
+    global project
     results = []
 
-    activity_sorted_by_day = [activity_code for activity_code, _ in sorted(local_schedule.items(), key=lambda x:x[1], reverse=False)]
-    for activity_code_1, activity_code_2 in itertools.combinations(activity_sorted_by_day, r=2):
+    activity_sorted_by_day = {workday: activity_code for activity_code, workday in sorted(local_schedule.items(), key=lambda x:x[1], reverse=False)}
+    for activity_code_1, activity_code_2 in itertools.combinations(activity_sorted_by_day.values(), r=2):
         activity_1 = project.activities[activity_code_1]
         activity_2 = project.activities[activity_code_2]
 
@@ -44,58 +65,94 @@ def check_activity_order_on_single_location(local_schedule):
     else:
         return 'fine'
 
+def reorder_activity_uniformly_on_single_range(local_schedule, day_from, day_to):
+    for a, d in local_schedule.items():
+        if d > day_from and d <= day_to:
+            local_schedule[a] -= 1
+    return local_schedule
+
+def push_workdays_reordering(local_schedule):
+    global project
+
+    local_schedule_modi = None
+    for activity_code, workday in local_schedule.items():
+        activity = project.activities[activity_code]
+        later_activity_list = {a: d for a, d in local_schedule.items() if d > workday}
+
+        target_days = []
+        for later_activity_code, later_activity_day in later_activity_list.items():
+            if later_activity_code in activity.predecessor:
+                target_days.append(later_activity_day)
+
+        if not target_days:
+            continue
+        else:
+            break_point = max(target_days)
+            local_schedule_modi = reorder_activity_uniformly_on_single_range(local_schedule, day_from=workday, day_to=break_point)
+            local_schedule[activity_code] = break_point
+
+    return local_schedule_modi
+
+
+## Activity Productivity Constraint
 def check_productivity_overload(activity_code, count):
     if count > project.activities[activity_code].productivity:
         return 'overloaded'
     else:
         return 'fine'
 
-def push_workdays(schedule, where, after):
-    for activity in schedule[where]:
-        workday = schedule[where][activity]
+def push_workdays_uniformly(where, after):
+    global project
+
+    schedule_to_modi = deepcopy(project.schedule)
+    for activity_code in schedule_to_modi[where]:
+        workday = schedule_to_modi[where][activity_code]
         if workday >= after:
-            schedule[where][activity] += 1
-    return schedule
+            schedule_to_modi[where][activity_code] += 1
+    return schedule_to_modi
 
-def export_schedule(schedule, fpath):
-    os.makedirs(os.path.dirname(fpath), exist_ok=True)
 
-    schedule_dict = defaultdict(dict)
-    for location in schedule:
-        for activity_code, day in schedule[location].items():
-            schedule_dict[day][location] = activity_code
-
-    schedule_df = pd.DataFrame(schedule_dict)
-    schedule_df.to_excel(fpath, na_rep='', header=True, index=True)
-
-def reschedule(project):
-    schedule = defaultdict(dict)
+## Update schedule
+def update_schedule(project):
     todo_when = defaultdict(list)
-    for work in project.schedule:
-        todo_when[work.day].append(work)
-        schedule[work.grid.location][work.activity.code] = work.day
 
-    for location in schedule:
-        if check_activity_order_on_single_location(local_schedule=schedule[location]) == 'conflict':
-            ## Reorder activities in the location
-            print('TODO')
+    for location in project.schedule:
+        for activity_code, day in project.schedule[location].items():
+            todo_when[day].append(activity_code)
+
+    ## Duplicated Activity Normalization
+    for location in project.schedule:
+        project.schedule[location] = deepcopy(norlamlize_duplicated_activity(local_schedule=project.schedule[location]))
+
+    ## Activity Order Constraint
+    for location in project.schedule:
+        if check_activity_order_on_single_location(local_schedule=project.schedule[location]) == 'conflict':
+            project.schedule[location] = deepcopy(push_workdays_reordering(local_schedule=project.schedule[location]))
         else:
             continue
+    project.export(fpath=navipath.schedule(case_num, 'step_1_order'))
 
+    ## Activity Productivity Constraint
     for day, works in sorted(todo_when.items(), key=lambda x:x[0], reverse=False):
-        activity_counter = Counter([work.activity.code for work in works])
+        activity_counter = Counter(works)
         for activity_code, count in activity_counter.items():
             if check_productivity_overload(activity_code, count) == 'overloaded':
                 num_overloaded = (count-project.activities[activity_code].productivity)
-                for target_work in [work for work in works if work.activity.code == activity_code][:num_overloaded]:
-                    schedule = deepcopy(push_workdays(schedule, where=target_work.grid.location, after=target_work.day))
+                
+                target_location_list = []
+                for location in project.schedule.keys():
+                    try:
+                        if project.schedule[location][activity_code] == day:
+                            target_location_list.append(location)
+                    except KeyError:
+                        continue
+
+                for target_location in target_location_list[:num_overloaded]:
+                    project.schedule = deepcopy(push_workdays_uniformly(where=target_location, after=day))
             else:
                 continue
-
-    fpath=navipath.reschedule(case_num)
-    export_schedule(schedule, fpath)
-
-
+    project.export(fpath=navipath.schedule(case_num, 'step_2_productivity'))
+    
 
 if __name__ == '__main__':
     ## Load project
@@ -103,5 +160,5 @@ if __name__ == '__main__':
     project = load_project(case_num=case_num)
     # project.summary(duration=True, sorted_grids=True)
 
-    ## Reschedule
-    reschedule(project)
+    ## Update schedule
+    update_schedule(project)
