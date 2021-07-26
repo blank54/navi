@@ -25,6 +25,11 @@ def load_project(case_num):
     project.export(fpath=navipath.schedule(case_num, 'initial'))
     return project
 
+def save_project(project, case_num):
+    note = '{}_updated'.format(case_num)
+    with open(navipath.proj(note), 'wb') as f:
+        pk.dump(project, f)
+
 def sort_local_schedule(local_schedule):
     return sorted(local_schedule.items(), key=lambda x:x[1], reverse=False)
 
@@ -223,3 +228,6 @@ if __name__ == '__main__':
 
     ## Update schedule
     update_schedule(project)
+
+    ## Save project
+    save_project(project, case_num)
