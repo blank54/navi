@@ -7,8 +7,9 @@ import sys
 rootpath = os.path.sep.join(os.path.dirname(os.path.abspath(__file__)).split(os.path.sep)[:-1])
 sys.path.append(rootpath)
 
-from naviutil import NaviPath
+from naviutil import NaviPath, NaviFunc
 navipath = NaviPath()
+navifunc = NaviFunc()
 
 import itertools
 import pandas as pd
@@ -24,6 +25,11 @@ def load_project(case_num):
 
     project.export(fpath=navipath.schedule(case_num, 'initial'))
     return project
+
+def save_project(project, case_num):
+    note = '{}_updated'.format(case_num)
+    with open(navipath.proj(note), 'wb') as f:
+        pk.dump(project, f)
 
 def sort_local_schedule(local_schedule):
     return sorted(local_schedule.items(), key=lambda x:x[1], reverse=False)
@@ -213,7 +219,9 @@ def update_schedule(project):
             original_schedule = deepcopy(updated_schedule)
             iteration += 1
 
+    project.schedule = updated_schedule
     print('\n  | Done')
+    return updated_schedule
 
 
 if __name__ == '__main__':
@@ -222,4 +230,11 @@ if __name__ == '__main__':
     project = load_project(case_num=case_num)
 
     ## Update schedule
-    update_schedule(project)
+    project.schedule = update_schedule(project)
+    project.initialize()
+
+    ## Print schedule
+    navifunc.print_schedule(schedule=project.schedule)
+
+    ## Save project
+    save_project(project, case_num)
