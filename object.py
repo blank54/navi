@@ -326,9 +326,8 @@ class Project:
         self.schedule = {}
         self.sorted_grids = []
 
-        self.__initialize()
-        self.__sort_grids()
-        self.__estimate_duration()
+        self.initialize()
+        
 
     def __len__(self):
         '''
@@ -337,7 +336,7 @@ class Project:
 
         return len(list(itertools.chain(*[[activity for activity in grid.works] for grid in self.grids])))
 
-    def __initialize(self):
+    def initialize(self):
         '''
         Set an initial schedule of the project.
         '''
@@ -352,6 +351,9 @@ class Project:
                     day += 1
                 except IndexError:
                     break
+
+        self.__sort_grids()
+        self.__estimate_duration()
 
     def __sort_grids(self):
         '''

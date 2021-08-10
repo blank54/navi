@@ -59,10 +59,9 @@ def assign_activity_to_grid(project):
 
 def print_work_layout(work_layout, timesleep=1):
     for day in sorted(work_layout.keys(), reverse=False):
+        time.sleep(timesleep)
         print('\n\n\n\n============================================================')
         print('Work Layout: (Day: {})'.format(day))
-
-        time.sleep(timesleep)
         for flr in sorted(work_layout[day].keys(), reverse=False):
             print('--------------------------------------------------')
             print('Floor: {}'.format(flr))
