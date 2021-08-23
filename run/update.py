@@ -64,7 +64,7 @@ def compare_schedule(schedule_1, schedule_2):
 
 
 ## Duplicated Activity Normalization
-def norlamlize_duplicated_activity(local_schedule):
+def normallize_duplicated_activity(local_schedule):
     local_schedule_modi = {}
 
     day = 0
@@ -249,7 +249,7 @@ def update_schedule(project):
     ## Duplicated Activity Normalization
     original_schedule = defaultdict(dict)
     for location in project.schedule:
-        original_schedule[location] = deepcopy(norlamlize_duplicated_activity(local_schedule=project.schedule[location]))
+        original_schedule[location] = deepcopy(normallize_duplicated_activity(local_schedule=project.schedule[location]))
 
     iteration = 0
     while True:
