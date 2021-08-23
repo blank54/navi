@@ -218,7 +218,6 @@ def activity_productivity_constraint(schedule, work_plan):
 #         #동일 레벨에서 생산성을 반영
 #         return 'fine'
 
-
 # #작업이 선행작업
 
 
@@ -230,6 +229,9 @@ def update(original_schedule):
 
     ## Activity Order Constraint
     updated_schedule = deepcopy(activity_order_constraint(original_schedule))
+
+    ## Activity Predecessor Completion Constraint
+    # updated_schedule = deepcopy(activity_predecessor_completion_constraint(updated_schedule))
 
     ## Activity Productivity Constraint
     updated_schedule = deepcopy(activity_productivity_constraint(updated_schedule, work_plan))
@@ -270,10 +272,11 @@ def update_schedule(project):
 
 if __name__ == '__main__':
     ## Load project
-    case_num = '01'
+    case_num = '03_excavation_only'
     project = load_project(case_num=case_num)
 
     ## Update schedule
+    ############
     project.schedule = update_schedule(project)
     project.initialize()
 
