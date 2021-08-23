@@ -172,7 +172,7 @@ if __name__ == '__main__':
     save_navisystem(navisystem=navisystem_ordered)
 
     ## Project Constraints
-    case_num = '03'
+    case_num = '01'
     duration = 60
     
     ## Init Project
