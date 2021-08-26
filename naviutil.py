@@ -160,7 +160,7 @@ class NaviFunc:
 
         return schedule
 
-    def schedule2xlsx(self, schedule, fname):
+    def schedule2xlsx(self, schedule, fname, verbose=True):
         '''
         Convert the schedule into a DataFrame format.
         '''
@@ -177,9 +177,10 @@ class NaviFunc:
         os.makedirs(NaviPath().fdir_schedule, exist_ok=True)
         schedule_df.to_excel(os.path.join(NaviPath().fdir_schedule, fname), na_rep='', header=True, index=True)
 
-        print('Save Schedule')
-        print('  | fdir : {}'.format(NaviPath().fdir_schedule))
-        print('  | fname: {}'.format(fname))
+        if verbose:
+            print('Save Schedule')
+            print('  | fdir : {}'.format(NaviPath().fdir_schedule))
+            print('  | fname: {}'.format(fname))
 
     def xlsx2schedule(self, activity_book, fname):
         schedule_df = pd.read_excel(os.path.join(NaviPath().fdir_schedule, fname))
@@ -193,7 +194,6 @@ class NaviFunc:
                     schedule[location][day] = activity_code
 
         return schedule
-
 
     def sort_local_schedule(local_schedule):
         return sorted(local_schedule.items(), key=lambda x:x[1], reverse=False)
