@@ -18,8 +18,9 @@ from collections import defaultdict
 import sys
 sys.path.append(rootpath)
 from object import NaviSystem, Activity, Grid, Project
-from naviutil import NaviPath
+from naviutil import NaviPath, NaviFunc
 navipath = NaviPath()
+navifunc = NaviFunc()
 
 
 def init_activity_book():
@@ -143,18 +144,13 @@ def define_works(case_data):
     return works
 
 def initiate_project(case_num, duration):
-    global fname_activity_book
-
-    with open(os.path.join(navipath.fdir_component, fname_activity_book), 'rb') as f:
-        activity_book = pk.load(f)
-
     case_data = pd.read_excel(navipath.case(case_num))
     works = define_works(case_data)
     grids = []
     for loc in works:
         grids.append(Grid(location=loc, works=works[loc]))
 
-    project = Project(activities=activity_book, grids=grids, duration=duration)
+    project = Project(grids=grids, duration=duration)
     project.summary()
 
     os.makedirs(navipath.fdir_proj, exist_ok=True)
@@ -165,6 +161,14 @@ def initiate_project(case_num, duration):
     print('Init Project')
     print('  | fdir : {}'.format(navipath.fdir_proj))
     print('  | fname: {}'.format(navipath.proj(case_num)))
+
+def initial_schedule(case_num):
+    with open(navipath.proj(case_num), 'rb') as f:
+        project = pk.load(f)
+
+    fname_schedule = 'C-{}.xlsx'.format(case_num)
+    schedule = navifunc.grids2schedule(grids=project.sorted_grids)
+    navifunc.schedule2xlsx(schedule=schedule, fname=fname_schedule)
 
 
 if __name__ == '__main__':
@@ -179,3 +183,6 @@ if __name__ == '__main__':
     ## Project
     define_works(case_data)
     initiate_project(case_num, duration)
+
+    ## Schedule
+    initial_schedule(case_num)

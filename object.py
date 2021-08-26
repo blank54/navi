@@ -85,53 +85,6 @@ class Activity:
         self.successor.append(activity_code)
         self.successor = list(set(self.successor))
 
-    def check_order_consistency(self, activity_code):
-        '''
-        Attributes
-        ----------
-        activity_code : str
-            | An activity code of which order between the current activity is to be checked.
-        '''
-
-        is_predecessor = False
-        is_successor = False
-
-        if activity_code in self.predecessor:
-            is_predecessor = True
-        else:
-            pass
-        if activity_code in self.successor:
-            is_successor = True
-        else:
-            pass
-
-        if all((is_predecessor, is_successor)):
-            return 'CONFLICT'
-        elif any((is_predecessor, is_successor)):
-            return 'FINE'
-        else:
-            return 'ABSENT'
-
-
-class Work:
-    '''
-    A class to represent an activity on a grid.
-
-    Attributes
-    ----------
-    grid : Grid
-        | The grid of the work.
-    day : int
-        | The day of the work.
-    activity : Activity
-        | The Activity class.
-    '''
-
-    def __init__(self, grid, day, activity):
-        self.grid = grid
-        self.day = day
-        self.activity = activity
-
 
 class Grid:
     '''
@@ -191,44 +144,22 @@ class Project:
         | To find location and workday for an activity.
     '''
 
-    def __init__(self, activities, grids, duration):
-        self.activities = activities
+    def __init__(self, grids, duration):
         self.grids = grids
+        self.sorted_grids = []
+
         self.duration = duration
         self.duration_expected = ''
 
-        self.bag_of_activity_code = list(set(itertools.chain(*[[activity.code for activity in grid.works] for grid in self.grids])))
-        self.schedule = {}
-        self.sorted_grids = []
-
-        self.initialize()
+        self.__sort_grids()
+        self.__estimate_duration()
         
-
     def __len__(self):
         '''
         Total number of activities to be conducted for the project.
         '''
 
         return len(list(itertools.chain(*[[activity for activity in grid.works] for grid in self.grids])))
-
-    def initialize(self):
-        '''
-        Set an initial schedule of the project.
-        '''
-
-        for grid in self.grids:
-            self.schedule[grid.location] = {}
-
-            day = 0
-            while True:
-                try:
-                    self.schedule[grid.location][grid.works[day].code] = day
-                    day += 1
-                except IndexError:
-                    break
-
-        self.__sort_grids()
-        self.__estimate_duration()
 
     def __sort_grids(self):
         '''
@@ -252,7 +183,7 @@ class Project:
                 sorted_by_dist.append(grids_same_worklen[0])
                 grids_same_worklen.pop(0)
 
-        self.sorted_grids = sorted_by_dist
+        self.sorted_grids = deepcopy(sorted_by_dist)
 
     def __estimate_duration(self):
         '''
@@ -265,9 +196,9 @@ class Project:
             if duration_expected <= last_day:
                 duration_expected = deepcopy(last_day)
 
-        self.duration_expected = duration_expected
+        self.duration_expected = deepcopy(duration_expected)
 
-    def summary(self, duration=False, sorted_grids=False):
+    def summary(self):
         '''
         Summarize the project schedule.
         '''
@@ -275,46 +206,15 @@ class Project:
         print('============================================================')
         print('Project Summary')
 
-        if duration:
-            self.__estimate_duration()
-            print('============================================================')
-            print('Duration')
-            print('  | Planned : {:,} days'.format(self.duration))
-            print('  | Expected: {:,} days'.format(self.duration_expected))
+        self.__estimate_duration()
+        print('Duration')
+        print('  | Planned : {:,} days'.format(self.duration))
+        print('  | Expected: {:,} days'.format(self.duration_expected))
 
-        if sorted_grids:
-            self.__sort_grids()
-            print('============================================================')
-            print('Sorted Grids')
-            for grid in self.sorted_grids:
-                print('  | Location: ({:>2} {:>2} {:>2}) -> WorkLen: {:>3,}'.format(grid.x, grid.y, grid.z, len(grid.works)))
-
-    def schedule2df(self):
-        '''
-        Convert the schedule into a DataFrame format.
-        '''
-
-        schedule_dict = defaultdict(dict)
-        for location in self.schedule:
-            for activity_code, day in self.schedule[location].items():
-                schedule_dict[day][location] = activity_code
-
-        schedule_df = pd.DataFrame(schedule_dict)
-        return schedule_df.reindex(sorted(schedule_df.columns), axis=1)
-
-    def export(self, fpath):
-        '''
-        Export the project schedule in the format of ".xlsx".
-
-        Attributes
-        ----------
-        fpath : str
-            | FilePath for the exported schedule.
-        '''
-
-        schedule_df = self.schedule2df()
-        os.makedirs(os.path.dirname(fpath), exist_ok=True)
-        schedule_df.to_excel(fpath, na_rep='', header=True, index=True)
+        self.__sort_grids()
+        print('Sorted Grids')
+        for grid in self.sorted_grids:
+            print('  | Location: ({:>2} {:>2} {:>2}) -> WorkLen: {:>3,}'.format(grid.x, grid.y, grid.z, len(grid.works)))
 
     def search(self, activity_code, verbose=False):
         '''
