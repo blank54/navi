@@ -43,9 +43,8 @@ def init_activity_book():
         }
         activity_book[code] = Activity(parameters=parameters)
 
-    fpath = os.path.join(navipath.fdir_component, fname_activity_book)
-    os.makedirs(fpath, exist_ok=True)
-    with open(fpath, 'wb') as f:
+    os.makedirs(navipath.fdir_component, exist_ok=True)
+    with open(os.path.join(navipath.fdir_component, fname_activity_book), 'wb') as f:
         pk.dump(activity_book, f)
 
     print('============================================================')
@@ -115,12 +114,17 @@ def set_orders_in_activity_book():
     if key_errors:
         print('Errors on ActivityOrder template')
         key_errors = list(set(key_errors))
-        for code in key_errors:
-            print('  | Absent in ActivityBook: {}'.format(code))
+        for activity_code in key_errors:
+            print('  | Absent in ActivityBook: {}'.format(activity_code))
     else:
         pass
 
-def define_works(navisystem, case_data):
+def define_works(case_data):
+    global fname_activity_book
+
+    with open(os.path.join(navipath.fdir_component, fname_activity_book), 'rb') as f:
+        activity_book = pk.load(f)
+
     works = defaultdict(list)
     for idx, line in case_data.iterrows():
         x = int(line['x'])
@@ -129,8 +133,8 @@ def define_works(navisystem, case_data):
         location = '{}_{}_{}'.format(x, y, z)
 
         try:
-            code = line['code']
-            activity = navisystem.activities[code]
+            activity_code = line['code']
+            activity = activity_book[activity_code]
         except KeyError:
             continue
 
@@ -139,53 +143,39 @@ def define_works(navisystem, case_data):
     return works
 
 def initiate_project(case_num, duration):
-    navisystem = load_navisystem()
+    global fname_activity_book
 
-    print('============================================================')
-    print('Init Project')
+    with open(os.path.join(navipath.fdir_component, fname_activity_book), 'rb') as f:
+        activity_book = pk.load(f)
 
     case_data = pd.read_excel(navipath.case(case_num))
-    works = define_works(navisystem, case_data)
+    works = define_works(case_data)
     grids = []
     for loc in works:
         grids.append(Grid(location=loc, works=works[loc]))
 
-    project = Project(activities=navisystem.activities, grids=grids, duration=duration)
+    project = Project(activities=activity_book, grids=grids, duration=duration)
     project.summary()
 
-    return project
-
-def save_project(case_num, project):
     os.makedirs(navipath.fdir_proj, exist_ok=True)
     with open(navipath.proj(case_num), 'wb') as f:
         pk.dump(project, f)
 
     print('============================================================')
-    print('Save Project:')
-    print('  | FilePath: {}'.format(navipath.proj(case_num)))
+    print('Init Project')
+    print('  | fdir : {}'.format(navipath.fdir_proj))
+    print('  | fname: {}'.format(navipath.proj(case_num)))
 
 
 if __name__ == '__main__':
     fname_activity_book = 'activity_book.pk'
+    case_num = '01'
+    duration = 60
 
+    ## Activity Book
     init_activity_book()
     set_orders_in_activity_book()
 
-
-
-
-
-
-
-    ## Init NaviSystem
-    navisystem = set_navisystem()
-    navisystem_ordered = set_activity_order_recursively(navisystem=navisystem)
-    save_navisystem(navisystem=navisystem_ordered)
-
-    ## Project Constraints
-    case_num = '03_excavation_only'
-    duration = 60
-    
-    ## Init Project
-    project = initiate_project(case_num, duration)
-    save_project(case_num, project)
+    ## Project
+    define_works(case_data)
+    initiate_project(case_num, duration)
