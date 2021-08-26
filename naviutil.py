@@ -171,7 +171,8 @@ class NaviFunc:
                 schedule_dict[day][location] = activity_code
 
         schedule_df = pd.DataFrame(schedule_dict)
-        schedule_df.reindex(sorted(schedule_df.columns), axis=1)
+        schedule_df = schedule_df.reindex(sorted(schedule_df.columns), axis=1)
+        schedule_df = schedule_df.sort_index()
 
         os.makedirs(NaviPath().fdir_schedule, exist_ok=True)
         schedule_df.to_excel(os.path.join(NaviPath().fdir_schedule, fname), na_rep='', header=True, index=True)
@@ -179,6 +180,51 @@ class NaviFunc:
         print('Save Schedule')
         print('  | fdir : {}'.format(NaviPath().fdir_schedule))
         print('  | fname: {}'.format(fname))
+
+    def xlsx2schedule(self, activity_book, fname):
+        schedule_df = pd.read_excel(os.path.join(NaviPath().fdir_schedule, fname))
+
+        schedule = defaultdict(dict)
+        for row in schedule_df.iterrows():
+            location = row[1]['Unnamed: 0']
+            schedule[location] = {}
+            for day, activity_code in row[1].items():
+                if activity_code in activity_book.keys():
+                    schedule[location][day] = activity_code
+
+        return schedule
+
+
+    def sort_local_schedule(local_schedule):
+        return sorted(local_schedule.items(), key=lambda x:x[1], reverse=False)
+
+    def build_daily_work_plan(self, schedule):
+        daily_work_plan = defaultdict(list)
+        for location in schedule:
+            for day, activity_code in schedule[location].items():
+                daily_work_plan[day].append(activity_code)
+
+        return daily_work_plan
+
+    def compare_schedule(self, schedule_1, schedule_2):
+        if schedule_1.keys() != schedule_2.keys():
+            return 'different'
+        else:
+            pass
+
+        for location in schedule_1.keys():
+            if len(schedule_1[location]) != len(schedule_2[location]):
+                return 'different'
+            else:
+                pass
+
+            for activity_code, day in schedule_1[location].items():
+                if day != schedule_2[location][activity_code]:
+                    return 'different'
+                else:
+                    continue
+
+        return 'same'
 
     def euclidean_distance(self, x, y):
         x_arr = np.array(x)
@@ -189,7 +235,7 @@ class NaviFunc:
     def assign_activity_to_grid(self, schedule):
         work_plan = defaultdict(list)
         for location in schedule:
-            for activity_code, day in schedule[location].items():
+            for day, activity_code in schedule[location].items():
                 work_plan[day].append((location, activity_code))
 
         xs, ys, zs = [], [], []
