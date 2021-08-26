@@ -5,6 +5,7 @@
 import os
 import time
 import numpy as np
+import pandas as pd
 from copy import deepcopy
 from collections import defaultdict
 
@@ -152,7 +153,7 @@ class NaviFunc:
             day = 0
             while True:
                 try:
-                    schedule[grid.location][grid.works[day].code] = day
+                    schedule[grid.location][day] = grid.works[day].code
                     day += 1
                 except IndexError:
                     break
@@ -166,13 +167,13 @@ class NaviFunc:
 
         schedule_dict = defaultdict(dict)
         for location in schedule:
-            for activity_code, day in schedule[location].items():
+            for day, activity_code in schedule[location].items():
                 schedule_dict[day][location] = activity_code
 
         schedule_df = pd.DataFrame(schedule_dict)
         schedule_df.reindex(sorted(schedule_df.columns), axis=1)
 
-        os.makedirs(NaviPath().fdir_schedule)
+        os.makedirs(NaviPath().fdir_schedule, exist_ok=True)
         schedule_df.to_excel(os.path.join(NaviPath().fdir_schedule, fname), na_rep='', header=True, index=True)
 
         print('Save Schedule')

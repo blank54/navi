@@ -17,7 +17,7 @@ from collections import defaultdict
 
 import sys
 sys.path.append(rootpath)
-from object import NaviSystem, Activity, Grid, Project
+from object import Activity, Grid, Project
 from naviutil import NaviPath, NaviFunc
 navipath = NaviPath()
 navifunc = NaviFunc()
@@ -120,12 +120,13 @@ def set_orders_in_activity_book():
     else:
         pass
 
-def define_works(case_data):
+def define_works(case_num):
     global fname_activity_book
 
     with open(os.path.join(navipath.fdir_component, fname_activity_book), 'rb') as f:
         activity_book = pk.load(f)
 
+    case_data = pd.read_excel(navipath.case(case_num))
     works = defaultdict(list)
     for idx, line in case_data.iterrows():
         x = int(line['x'])
@@ -144,8 +145,7 @@ def define_works(case_data):
     return works
 
 def initiate_project(case_num, duration):
-    case_data = pd.read_excel(navipath.case(case_num))
-    works = define_works(case_data)
+    works = define_works(case_num)
     grids = []
     for loc in works:
         grids.append(Grid(location=loc, works=works[loc]))
@@ -181,7 +181,7 @@ if __name__ == '__main__':
     set_orders_in_activity_book()
 
     ## Project
-    define_works(case_data)
+    define_works(case_num)
     initiate_project(case_num, duration)
 
     ## Schedule

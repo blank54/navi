@@ -151,7 +151,10 @@ class Project:
         self.duration = duration
         self.duration_expected = ''
 
+        self.schedule = ''
+
         self.__sort_grids()
+        self.__update_schedule()
         self.__estimate_duration()
         
     def __len__(self):
@@ -185,6 +188,9 @@ class Project:
 
         self.sorted_grids = deepcopy(sorted_by_dist)
 
+    def __update_schedule(self):
+        self.schedule = navifunc.grids2schedule(grids=self.sorted_grids)
+
     def __estimate_duration(self):
         '''
         Estimate the project duration based on the current schedule.
@@ -192,7 +198,7 @@ class Project:
 
         duration_expected = 0
         for location in self.schedule:
-            last_day = max(list(self.schedule[location].values()))
+            last_day = max(list(self.schedule[location].keys()))
             if duration_expected <= last_day:
                 duration_expected = deepcopy(last_day)
 
