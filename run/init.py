@@ -8,19 +8,19 @@ It defines global variables and constraints.
 
 # Configuration
 import os
+import sys
 rootpath = os.path.sep.join(os.path.dirname(os.path.abspath(__file__)).split(os.path.sep)[:-1])
+sys.path.append(rootpath)
+
+from object import Activity, Grid, Project
+from naviutil import NaviPath, NaviFunc
+navipath = NaviPath()
+navifunc = NaviFunc()
 
 import pickle as pk
 import pandas as pd
 from copy import deepcopy
 from collections import defaultdict
-
-import sys
-sys.path.append(rootpath)
-from object import Activity, Grid, Project
-from naviutil import NaviPath, NaviFunc
-navipath = NaviPath()
-navifunc = NaviFunc()
 
 
 def init_activity_book():

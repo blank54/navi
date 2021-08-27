@@ -231,9 +231,6 @@ if __name__ == '__main__':
         activity_book = pk.load(f)
 
     case_num = '01'
-    with open(navipath.proj(case_num), 'rb') as f:
-        project = pk.load(f)
-
     fname_initial_schedule = os.path.join(navipath.fdir_schedule, 'C-{}.xlsx'.format(case_num))
     schedule = navifunc.xlsx2schedule(activity_book=activity_book, fname=fname_initial_schedule)
     normalized_schedule = normallize_duplicated_activity(schedule)

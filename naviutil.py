@@ -226,6 +226,20 @@ class NaviFunc:
 
         return 'same'
 
+    def compare_local_schedule(self, local_schedule_1, local_schedule_2):
+        if len(local_schedule_1) != len(local_schedule_2):
+            return 'different'
+        else:
+            pass
+
+        for (day1, activity_code1), (day2, activity_code2) in zip(local_schedule_1.items(), local_schedule_2.items()):
+            if activity_code1 == activity_code2:
+                continue
+            else:
+                return 'different'
+
+        return 'same'
+
     def euclidean_distance(self, x, y):
         x_arr = np.array(x)
         y_arr = np.array(y)
