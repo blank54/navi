@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
 # Configuration
 import os
 import sys
+
+#__file__ = os.getcwd()
+
 rootpath = os.path.sep.join(os.path.dirname(os.path.abspath(__file__)).split(os.path.sep)[:-1])
 sys.path.append(rootpath)
 
@@ -272,7 +276,7 @@ def update_schedule(project):
 
 if __name__ == '__main__':
     ## Load project
-    case_num = '03_excavation_only'
+    case_num = '05_structure'
     project = load_project(case_num=case_num)
 
     ## Update schedule

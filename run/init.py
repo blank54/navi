@@ -172,7 +172,7 @@ if __name__ == '__main__':
     save_navisystem(navisystem=navisystem_ordered)
 
     ## Project Constraints
-    case_num = '03_excavation_only'
+    case_num = '05_structure'
     duration = 60
     
     ## Init Project
