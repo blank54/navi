@@ -5,6 +5,7 @@
 import os
 import time
 import numpy as np
+import pandas as pd
 from copy import deepcopy
 from collections import defaultdict
 
@@ -34,6 +35,212 @@ class NaviPath:
 
 
 class NaviFunc:
+    def order_bw_activity(self, activity_book, activity_code1, activity_code2):
+        '''
+        Attributes
+        ----------
+        activity_code1 : str
+            | An activity code to compare the order.
+        activity_code2 : str
+            | Another activity code to compare the order.
+        '''
+
+        activity1 = activity_book[activity_code1]
+        activity2 = activity_book[activity_code2]
+
+        consistency1 = activity1.check_order_consistency(activity2.code)
+        consistency2 = activity2.check_order_consistency(activity1.code)
+        STATUS = None
+
+        if all([(consistency1=='FINE'), (consistency2=='FINE')]):
+            STATUS = 'FINE'
+        elif any([(consistency1=='CONFLICT'), (consistency2=='CONFLICT')]):
+            STATUS = 'CONFLICT'
+        else:
+            STATUS = 'IRRELEVANT'
+
+        return STATUS
+
+    def check_order(self, activity_book, show_irrelevant=False, show_conflict=True, show_error=True):
+        '''
+        Attributes
+        ----------
+        show_irrelevant : bool
+            | To show irrelevant activity pairs. (default : False)
+        show_conflict : bool
+            | To show conflict activity pairs. (default : True)
+        show_error : bool
+            | To show errors in activity pairs. (default : True)
+        '''
+
+        fines = []
+        irrelevants = []
+        conflicts = []
+        errors = []
+
+        pairs = list(itertools.combinations(activity_book.keys(), 2))
+        for activity_code1, activity_code2 in pairs:
+            STATUS = self.order_bw_activity(activity_book, activity_code1, activity_code2)
+
+            if STATUS == 'FINE':
+                fines.append((activity_code1, activity_code2))
+            elif STATUS == 'IRRELEVANT':
+                irrelevants.append((activity_code1, activity_code2))
+            elif STATUS == 'CONFLICT':
+                conflicts.append((activity_code1, activity_code2))
+            else:
+                errors.append((activity_code1, activity_code2))
+
+        print('Check orders (total: {:,} activities -> {:,} pairs)'.format(len(activity_book), len(pairs)))
+        print('  | FINE:       {:,} pairs'.format(len(fines)))
+        print('  | IRRELEVANT: {:,} pairs'.format(len(irrelevants)))
+        print('  | CONFLICT:  {:,} pairs'.format(len(conflicts)))
+        print('  | ERROR:     {:,} pairs'.format(len(errors)))
+
+        if show_irrelevant and irrelevants:
+            print('INFO: IRRELEVANT')
+            for irrelevant in irrelevants:
+                print('  | [{}] and [{}]'.format(irrelevant[0], irrelevant[1]))
+
+        if show_conflict and conflicts:
+            print('WARNING: CONFLICT')
+            for conflict in conflicts:
+                print('  | [{}] <-> [{}]'.format(conflict[0], conflict[1]))
+
+        if show_error and errors:
+            print('ERROR:')
+            for error in errors:
+                print('  | [{}] and [{}]'.format(error[0], error[1]))
+
+        return fines, irrelevants, conflicts, errors
+
+    def check_order_consistency(self, activity_code1, activity_code2):
+        '''
+        Attributes
+        ----------
+        activity_code2 : str
+            | An activity code of which order between the current activity is to be checked.
+        '''
+
+        is_predecessor = False
+        is_successor = False
+
+        if activity_code2 in activity_code1.predecessor:
+            is_predecessor = True
+        else:
+            pass
+        if activity_code2 in activity_code1.successor:
+            is_successor = True
+        else:
+            pass
+
+        if all((is_predecessor, is_successor)):
+            return 'CONFLICT'
+        elif any((is_predecessor, is_successor)):
+            return 'FINE'
+        else:
+            return 'ABSENT'
+
+    def grids2schedule(self, grids):
+        '''
+        Set an initial schedule of the project.
+        '''
+
+        schedule = defaultdict(dict)
+        for grid in grids:
+            schedule[grid.location] = {}
+
+            day = 0
+            while True:
+                try:
+                    schedule[grid.location][day] = grid.works[day].code
+                    day += 1
+                except IndexError:
+                    break
+
+        return schedule
+
+    def schedule2xlsx(self, schedule, fname, verbose=True):
+        '''
+        Convert the schedule into a DataFrame format.
+        '''
+
+        schedule_dict = defaultdict(dict)
+        for location in schedule:
+            for day, activity_code in schedule[location].items():
+                schedule_dict[day][location] = activity_code
+
+        schedule_df = pd.DataFrame(schedule_dict)
+        schedule_df = schedule_df.reindex(sorted(schedule_df.columns), axis=1)
+        schedule_df = schedule_df.sort_index()
+
+        os.makedirs(NaviPath().fdir_schedule, exist_ok=True)
+        schedule_df.to_excel(os.path.sep.join((NaviPath().fdir_schedule, fname)), na_rep='', header=True, index=True)
+
+        if verbose:
+            print('Save Schedule')
+            print('  | fdir : {}'.format(NaviPath().fdir_schedule))
+            print('  | fname: {}'.format(fname))
+
+    def xlsx2schedule(self, activity_book, fname):
+        print(os.path.sep.join((NaviPath().fdir_schedule, fname)))
+        schedule_df = pd.read_excel(os.path.sep.join((NaviPath().fdir_schedule, fname)))
+
+        schedule = defaultdict(dict)
+        for row in schedule_df.iterrows():
+            location = row[1]['Unnamed: 0']
+            schedule[location] = {}
+            for day, activity_code in row[1].items():
+                if activity_code in activity_book.keys():
+                    schedule[location][day] = activity_code
+
+        return schedule
+
+    def sort_local_schedule(local_schedule):
+        return sorted(local_schedule.items(), key=lambda x:x[1], reverse=False)
+
+    def build_daily_work_plan(self, schedule):
+        daily_work_plan = defaultdict(list)
+        for location in schedule:
+            for day, activity_code in schedule[location].items():
+                daily_work_plan[day].append(activity_code)
+
+        return daily_work_plan
+
+    def compare_schedule(self, schedule_1, schedule_2):
+        if schedule_1.keys() != schedule_2.keys():
+            return 'different'
+        else:
+            pass
+
+        for location in schedule_1.keys():
+            if len(schedule_1[location]) != len(schedule_2[location]):
+                return 'different'
+            else:
+                pass
+
+            for activity_code, day in schedule_1[location].items():
+                if day != schedule_2[location][activity_code]:
+                    return 'different'
+                else:
+                    continue
+
+        return 'same'
+
+    def compare_local_schedule(self, local_schedule_1, local_schedule_2):
+        if len(local_schedule_1) != len(local_schedule_2):
+            return 'different'
+        else:
+            pass
+
+        for (day1, activity_code1), (day2, activity_code2) in zip(local_schedule_1.items(), local_schedule_2.items()):
+            if activity_code1 == activity_code2:
+                continue
+            else:
+                return 'different'
+
+        return 'same'
+
     def euclidean_distance(self, x, y):
         x_arr = np.array(x)
         y_arr = np.array(y)
@@ -43,7 +250,7 @@ class NaviFunc:
     def assign_activity_to_grid(self, schedule):
         work_plan = defaultdict(list)
         for location in schedule:
-            for activity_code, day in schedule[location].items():
+            for day, activity_code in schedule[location].items():
                 work_plan[day].append((location, activity_code))
 
         xs, ys, zs = [], [], []
