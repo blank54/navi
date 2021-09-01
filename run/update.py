@@ -12,102 +12,134 @@ navipath = NaviPath()
 navifunc = NaviFunc()
 
 import itertools
+from time import time
 import pandas as pd
 import pickle as pk
 from copy import deepcopy
 from collections import defaultdict, Counter
 
 
+## Data Import
+def import_schedule(case_num):
+    global activity_book
+
+    try:
+        fname_initial_schedule = os.path.join(navipath.fdir_schedule, 'C-{}.xlsx'.format(case_num))
+        schedule = navifunc.xlsx2schedule(activity_book=activity_book, fname=fname_initial_schedule)
+        return schedule
+    except FileNotFoundError:
+        print('Error: You should run "init.py" first to build "C-{}.xlsx"'.format(case_num))
+        return None
+
 ## Duplicated Activity Normalization
 def normallize_duplicated_activity(schedule):
-    normalized_schedule = defaultdict(dict)
-
+    schedule_normalized = defaultdict(dict)
     for location in schedule:
-        normalized_schedule[location] = {}
+        schedule_normalized[location] = {}
 
         day = 0
         for activity_code in schedule[location].values():
-            if activity_code not in normalized_schedule[location].values():
-                normalized_schedule[location][day] = activity_code
+            if activity_code not in schedule_normalized[location].values():
+                schedule_normalized[location][day] = activity_code
                 day += 1
             else:
                 continue
 
-    return normalized_schedule
+    fname = 'C-{}_updated_normalized.xlsx'.format(case_num)
+    navifunc.schedule2xlsx(schedule_normalized, fname, verbose=False)
+    return schedule_normalized
 
 ## Activity Order Constraint
-def check_activity_order_on_single_location(schedule, location):
-    global activity_book
+def check_activity_order_within_work(local_schedule, activity_code):
+    global activit_book
 
-    results = []
+    workday = [day for day in local_schedule.keys() if local_schedule[day] == activity_code][0]
 
-    for activity_code1, activity_code2 in itertools.combinations(schedule[location].values(), r=2):
+    conflict_items = []
+    for day in range(workday, max(local_schedule.keys())+1, 1):
         try:
-            activity_1 = activity_book[activity_code1]
+            activity_code2 = local_schedule[day]
+            activity_1 = activity_book[activity_code]
             activity_2 = activity_book[activity_code2]
         except KeyError:
             continue
-
+        
         if activity_code2 in activity_1.successor:
-            results.append('fine')
+            order = 'fine'
         elif activity_code2 in activity_1.predecessor:
-            results.append('conflict')
+            order = 'conflict'
         else:
-            results.append('irrelevant')
+            order = 'irrelevant'
 
-    if any([result == 'conflict' for result in results]):
-        return 'conflict'
-    else:
-        return 'fine'
+        if order == 'conflict':
+            conflict_items.append((day, activity_code2))
 
-def activity_order_constraint(schedule):
-    global activity_book
+    return conflict_items
 
-    updated_schedule = defaultdict(dict)
-    for location in schedule:
-        if check_activity_order_on_single_location(schedule=schedule, location=location) == 'conflict':
-            print('{}: conflict'.format(location))
-            # for day, activity_code in schedule[location].items():
-            #     try:
-            #         activity = activity_book[activity_code]
-            #     except KeyError:
-            #         continue
+def reorder_activity(local_schedule, activity_code, conflict_items):
+    local_schedule_updated = {}
 
-            #     later_activity_list = [(d, a) for d, a in schedule[location].items() if d > day]
-            #     target_days = []
-            #     for later_activity_day, later_activity_code in later_activity_list:
-            #         if later_activity_code in activity.predecessor:
-            #             target_days.append(later_activity_day)
+    current = [day for day in local_schedule.keys() if local_schedule[day] == activity_code][0]
+    move_to = max([day for day, _ in conflict_items])
 
-            #     if not target_days:
-            #         print('no target days')
-            #         continue
-            #     else:
-            #         day_left = deepcopy(day)
-            #         day_right = max(target_days)
-
-            #         print(location)
-            #         print(day_left)
-            #         print(day_right)
-
-            #         local_schedule_updated = {}
-            #         for d in schedule[location].keys():
-            #             if d < day_left:
-            #                 local_schedule_updated[d] = deepcopy(schedule[location][d])
-            #             elif d == day_left:
-            #                 local_schedule_updated[day_right] = deepcopy(schedule[location][d])
-            #             elif d > day_left and d <= day_right:
-            #                 local_schedule_updated[d-1] = deepcopy(schedule[location][d])
-            #             else:
-            #                 local_schedule_updated[d] = deepcopy(schedule[location][d])
-
-            #         updated_schedule[location] = local_schedule_updated
-
+    for day in range(0, len(local_schedule), 1):
+        if day < current or day > move_to:
+            local_schedule_updated[day] = local_schedule[day]
+        elif day == current:
+            local_schedule_updated[move_to] = local_schedule[day]
         else:
-            print('{}: okay'.format(location))
-            updated_schedule[location] = deepcopy(schedule[location])
+            local_schedule_updated[day-1] = local_schedule[day]
 
-    return updated_schedule
+    return {d: a for d, a in sorted(local_schedule_updated.items(), key=lambda x:x[0])}
+
+def update_order_in_local_schedule(local_schedule, verbose_local=False, verbose_conflict=False):
+    for day, activity_code in sorted(local_schedule.items(), key=lambda x:x[0]):
+        conflict_items = check_activity_order_within_work(local_schedule, activity_code)
+        
+        if verbose_local:
+            print('{:2}: {}'.format(day, activity_code))
+        else:
+            pass
+
+        if conflict_items:
+            if verbose_conflict:
+                for conflicted_day, conflicted_activity_code in conflict_items:
+                    print('  | Conflicts at {}({}) <-> {}({})'.format(activity_code, day, conflicted_activity_code, conflicted_day))
+            else:
+                pass
+
+            local_schedule_updated = deepcopy(reorder_activity(local_schedule, activity_code, conflict_items))
+            return local_schedule_updated
+        else:
+            continue
+
+    return local_schedule
+
+def activity_order_constraint(schedule, verbose_iter=False, verbose_local=False, verbose_conflict=False):
+    schedule_updated = deepcopy(schedule)
+
+    iteration = 0
+    for location in schedule.keys():
+        local_schedule_original = deepcopy(schedule[location])
+
+        while True:
+            iteration += 1
+
+            if verbose_iter:
+                print('============================================================')
+                print('Iteration: {:03,d} ({})'.format(iteration, location))
+            else:
+                pass
+
+            local_schedule_updated = deepcopy(update_order_in_local_schedule(local_schedule=local_schedule_original, verbose_local=verbose_local, verbose_conflict=verbose_conflict))
+            if navifunc.compare_local_schedule(local_schedule_original, local_schedule_updated) == 'same':
+                schedule_updated[location] = deepcopy(local_schedule_updated)
+                break
+            else:
+                local_schedule_original = deepcopy(local_schedule_updated)
+
+    return schedule_updated
+
 
 # 작업별 순서에 정수값을 줄 수는 없을까요, 10000, 5자리 숫자 중 100의자리 이상은 선후관계 따라 부여
 # 10의 자리 수는 선후관계가 없는 것들끼리 이름순 등 랜덤
@@ -124,22 +156,23 @@ def check_productivity_overload(activity_code, count):
         return 'fine'
 
 def push_workdays_uniformly(schedule, target_location, after):
-    updated_schedule = defaultdict(dict)
+    schedule_updated = defaultdict(dict)
     for location in schedule:
         if location != target_location:
-            updated_schedule[location] = schedule[location]
+            schedule_updated[location] = schedule[location]
         else:
             for day, activity_code in schedule[location].items():
                 if day >= after:
-                    updated_schedule[location][day+1] = activity_code
+                    schedule_updated[location][day+1] = activity_code
                 else:
-                    updated_schedule[location][day] = activity_code
-            updated_schedule[location][after] = ''
-    return updated_schedule
+                    schedule_updated[location][day] = activity_code
+            schedule_updated[location][after] = ''
+    return schedule_updated
 
 def activity_productivity_constraint(schedule, daily_work_plan):
     global activity_book
 
+    schedule_updated = defaultdict(dict)
     for day, works in sorted(daily_work_plan.items(), key=lambda x:x[0], reverse=False):
         activity_counter = Counter(works)
         for activity_code, count in activity_counter.items():
@@ -155,11 +188,14 @@ def activity_productivity_constraint(schedule, daily_work_plan):
                         continue
 
                 for target_location in target_location_list[:num_overloaded]:
-                    updated_schedule = deepcopy(push_workdays_uniformly(schedule=schedule, target_location=target_location, after=day))
+                    schedule_updated = deepcopy(push_workdays_uniformly(schedule=schedule, target_location=target_location, after=day))
             else:
                 continue
 
-    return updated_schedule
+    if schedule_updated:
+        return schedule_updated
+    else:
+        return schedule
 
 # 생산성은 동일레벨(Z값이 동일 그리드끼리만)계산
 # Z값이 다를 경우 다른 일정으로 진행
@@ -203,26 +239,45 @@ def activity_productivity_constraint(schedule, daily_work_plan):
 
 
 ## Update schedule
-def update(original_schedule):
-    global iteration
+def update(schedule_original, save_log=True):
+    times = []
+    iteration = 0
+    while True:
+        print('\r  | Iteration: {:03,d}'.format(iteration), end='')
+        start_time = time()
+        
+        ## Work Plans
+        daily_work_plan = navifunc.build_daily_work_plan(schedule_original)
 
-    ## Work Plans
-    daily_work_plan = navifunc.build_daily_work_plan(original_schedule)
+        ## Activity Order Constraint
+        schedule_updated_order = deepcopy(activity_order_constraint(schedule_original, verbose_iter=False, verbose_local=False, verbose_conflict=False))
 
-    ## Activity Order Constraint
-    # updated_schedule = deepcopy(activity_order_constraint(original_schedule))
-    # fname = 'C-{}_updated_I-{:03,d}_01_order.xlsx'.format(case_num, iteration)
-    # navifunc.schedule2xlsx(updated_schedule, fname, verbose=False)
+        ## Activity Predecessor Completion Constraint
+        # schedule_updated = deepcopy(activity_predecessor_completion_constraint(schedule_updated))
 
-    ## Activity Predecessor Completion Constraint
-    # updated_schedule = deepcopy(activity_predecessor_completion_constraint(updated_schedule))
+        ## Activity Productivity Constraint
+        schedule_updated_productivity = deepcopy(activity_productivity_constraint(schedule_updated_order, daily_work_plan))
 
-    ## Activity Productivity Constraint
-    updated_schedule = deepcopy(activity_productivity_constraint(original_schedule, daily_work_plan))
-    fname = 'C-{}_updated_I-{:03,d}_02_productivity.xlsx'.format(case_num, iteration)
-    navifunc.schedule2xlsx(updated_schedule, fname, verbose=False)
+        schedule_updated = deepcopy(schedule_updated_productivity)
+        if navifunc.compare_schedule(schedule_original, schedule_updated) == 'same':
+            break
+        else:
+            schedule_original = deepcopy(schedule_updated)
+            iteration += 1
 
-    return updated_schedule
+        if save_log:
+            navifunc.schedule2xlsx(schedule_updated_order, fname='C-{}_updated_I-{:03,d}_01-order.xlsx'.format(case_num, iteration), verbose=False)
+            navifunc.schedule2xlsx(schedule_updated_productivity, fname='C-{}_updated_I-{:03,d}_02-productivity.xlsx'.format(case_num, iteration), verbose=False)
+        else:
+            pass
+
+        end_time = time()
+        running_time = end_time - start_time
+        times.append((iteration, running_time))
+        print(' ({:.03f} sec)'.format(running_time), end='')
+
+    print('\n  | Running time: {:,d} sec'.format(sum([t for _, t in times])))
+    return schedule_updated
 
 
 if __name__ == '__main__':
@@ -231,29 +286,13 @@ if __name__ == '__main__':
         activity_book = pk.load(f)
 
     case_num = '01'
-    fname_initial_schedule = os.path.join(navipath.fdir_schedule, 'C-{}.xlsx'.format(case_num))
-    schedule = navifunc.xlsx2schedule(activity_book=activity_book, fname=fname_initial_schedule)
-    normalized_schedule = normallize_duplicated_activity(schedule)
-    fname = 'C-{}_updated_normalized.xlsx'.format(case_num)
-    navifunc.schedule2xlsx(normalized_schedule, fname, verbose=False)
+    schedule = import_schedule(case_num)
+    schedule_normalized = normallize_duplicated_activity(schedule)
 
     ## Update schedule
     print('============================================================')
     print('Update schedule')
-
-    iteration = 0
-    original_schedule = deepcopy(normalized_schedule)
-    while True:
-        print('\r  | Iteration: {:03,d}'.format(iteration), end='')
-        updated_schedule = deepcopy(update(original_schedule))
-        # fname = 'C-{}_updated_I-{:03,d}.xlsx'.format(case_num, iteration)
-        # navifunc.schedule2xlsx(updated_schedule, fname, verbose=False)
-
-        if navifunc.compare_schedule(original_schedule, updated_schedule) == 'same':
-            break
-        else:
-            normalized_schedule = deepcopy(updated_schedule)
-            iteration += 1
+    schedule_updated = update(schedule_normalized, save_log=True)
 
     ## Print schedule
-    # navifunc.print_schedule(schedule=updated_schedule)
+    # navifunc.print_schedule(schedule=schedule_updated)
