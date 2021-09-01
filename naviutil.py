@@ -175,7 +175,7 @@ class NaviFunc:
         schedule_df = schedule_df.sort_index()
 
         os.makedirs(NaviPath().fdir_schedule, exist_ok=True)
-        schedule_df.to_excel(os.path.join(NaviPath().fdir_schedule, fname), na_rep='', header=True, index=True)
+        schedule_df.to_excel(os.path.sep.join((NaviPath().fdir_schedule, fname)), na_rep='', header=True, index=True)
 
         if verbose:
             print('Save Schedule')
@@ -183,7 +183,8 @@ class NaviFunc:
             print('  | fname: {}'.format(fname))
 
     def xlsx2schedule(self, activity_book, fname):
-        schedule_df = pd.read_excel(os.path.join(NaviPath().fdir_schedule, fname))
+        print(os.path.sep.join((NaviPath().fdir_schedule, fname)))
+        schedule_df = pd.read_excel(os.path.sep.join((NaviPath().fdir_schedule, fname)))
 
         schedule = defaultdict(dict)
         for row in schedule_df.iterrows():

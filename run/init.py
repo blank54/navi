@@ -45,7 +45,7 @@ def init_activity_book():
         activity_book[code] = Activity(parameters=parameters)
 
     os.makedirs(navipath.fdir_component, exist_ok=True)
-    with open(os.path.join(navipath.fdir_component, fname_activity_book), 'wb') as f:
+    with open(os.path.sep.join((navipath.fdir_component, fname_activity_book)), 'wb') as f:
         pk.dump(activity_book, f)
 
     print('============================================================')
@@ -56,7 +56,7 @@ def init_activity_book():
 def set_orders_in_activity_book():
     global fname_activity_book
 
-    with open(os.path.join(navipath.fdir_component, fname_activity_book), 'rb') as f:
+    with open(os.path.sep.join((navipath.fdir_component, fname_activity_book)), 'rb') as f:
         activity_book = pk.load(f)
 
     activity_order = pd.read_excel(navipath.activity_order)
@@ -104,7 +104,7 @@ def set_orders_in_activity_book():
                     activity_book[activity_code].successor = updated_succs
                     updates.append(True)
 
-    with open(os.path.join(navipath.fdir_component, fname_activity_book), 'wb') as f:
+    with open(os.path.sep.join((navipath.fdir_component, fname_activity_book)), 'wb') as f:
         pk.dump(activity_book, f)
 
     print('============================================================')
@@ -123,7 +123,7 @@ def set_orders_in_activity_book():
 def define_works(case_num):
     global fname_activity_book
 
-    with open(os.path.join(navipath.fdir_component, fname_activity_book), 'rb') as f:
+    with open(os.path.sep.join((navipath.fdir_component, fname_activity_book)), 'rb') as f:
         activity_book = pk.load(f)
 
     case_data = pd.read_excel(navipath.case(case_num))
@@ -160,7 +160,7 @@ def initiate_project(case_num, duration):
     print('============================================================')
     print('Init Project')
     print('  | fdir : {}'.format(navipath.fdir_proj))
-    print('  | fname: {}'.format(navipath.proj(case_num)))
+    print('  | fname: {}'.format(os.path.basename(navipath.proj(case_num))))
 
 def initial_schedule(case_num):
     with open(navipath.proj(case_num), 'rb') as f:

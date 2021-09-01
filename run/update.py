@@ -11,6 +11,7 @@ from naviutil import NaviPath, NaviFunc
 navipath = NaviPath()
 navifunc = NaviFunc()
 
+import shutil
 import itertools
 from time import time
 import pandas as pd
@@ -24,15 +25,17 @@ def import_schedule(case_num):
     global activity_book
 
     try:
-        fname_initial_schedule = os.path.join(navipath.fdir_schedule, 'C-{}.xlsx'.format(case_num))
+        fname_initial_schedule = 'C-{}.xlsx'.format(case_num)
         schedule = navifunc.xlsx2schedule(activity_book=activity_book, fname=fname_initial_schedule)
         return schedule
     except FileNotFoundError:
         print('Error: You should run "init.py" first to build "C-{}.xlsx"'.format(case_num))
-        return None
+        sys.exit(1)
 
 ## Duplicated Activity Normalization
 def normallize_duplicated_activity(schedule):
+    global case_num
+
     schedule_normalized = defaultdict(dict)
     for location in schedule:
         schedule_normalized[location] = {}
@@ -45,7 +48,11 @@ def normallize_duplicated_activity(schedule):
             else:
                 continue
 
-    fname = 'C-{}_updated_normalized.xlsx'.format(case_num)
+    fname = 'C-{}/normalized.xlsx'.format(case_num)
+    fdir = os.path.sep.join((navipath.fdir_schedule, os.path.dirname(fname)))
+    if os.path.exists(fdir):
+        shutil.rmtree(fdir)
+    os.makedirs(fdir)
     navifunc.schedule2xlsx(schedule_normalized, fname, verbose=False)
     return schedule_normalized
 
@@ -266,8 +273,8 @@ def update(schedule_original, save_log=True):
             iteration += 1
 
         if save_log:
-            navifunc.schedule2xlsx(schedule_updated_order, fname='C-{}_updated_I-{:03,d}_01-order.xlsx'.format(case_num, iteration), verbose=False)
-            navifunc.schedule2xlsx(schedule_updated_productivity, fname='C-{}_updated_I-{:03,d}_02-productivity.xlsx'.format(case_num, iteration), verbose=False)
+            navifunc.schedule2xlsx(schedule_updated_order, fname='C-{}/I-{:03,d}_01-order.xlsx'.format(case_num, iteration), verbose=False)
+            navifunc.schedule2xlsx(schedule_updated_productivity, fname='C-{}/I-{:03,d}_02-productivity.xlsx'.format(case_num, iteration), verbose=False)
         else:
             pass
 
@@ -281,9 +288,13 @@ def update(schedule_original, save_log=True):
 
 
 if __name__ == '__main__':
-    fname_activity_book = 'activity_book.pk'
-    with open(os.path.join(navipath.fdir_component, fname_activity_book), 'rb') as f:
-        activity_book = pk.load(f)
+    try:
+        fname_activity_book = 'activity_book.pk'
+        with open(os.path.sep.join((navipath.fdir_component, fname_activity_book)), 'rb') as f:
+            activity_book = pk.load(f)
+    except FileNotFoundError:
+        print('Error: You should run "init.py" first to build "activity_book.pk"')
+        sys.exit(1)
 
     case_num = '01'
     schedule = import_schedule(case_num)

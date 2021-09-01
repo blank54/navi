@@ -128,10 +128,10 @@ def update_order(schedule, verbose_iter=False, verbose_local=False):
 
 if __name__ == '__main__':
     fname_activity_book = 'activity_book.pk'
-    with open(os.path.join(navipath.fdir_component, fname_activity_book), 'rb') as f:
+    with open(os.path.sep.join(navipath.fdir_component, fname_activity_book), 'rb') as f:
         activity_book = pk.load(f)
 
     case_num = '01'
-    fname_schedule_original = os.path.join(navipath.fdir_schedule, 'C-{}.xlsx'.format(case_num))
+    fname_schedule_original = os.path.sep.join(navipath.fdir_schedule, 'C-{}.xlsx'.format(case_num))
     schedule_original = import_schedule(fname=fname_schedule_original)
     schedule_updated = update_order(schedule=schedule_original, verbose_iter=True, verbose_local=False)
