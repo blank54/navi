@@ -20,6 +20,7 @@ class NaviPath:
 
     activity_table = os.path.sep.join((fdir_template, 'activity_table.xlsx'))
     activity_order = os.path.sep.join((fdir_template, 'activity_order.xlsx'))
+    activity_pre_dist = os.path.sep.join((fdir_template, 'activity_pre_dist.xlsx')) #choi 추가
 
     navisystem = os.path.sep.join((fdir_component, 'navisystem.pk'))
 
