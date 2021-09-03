@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
 # Configuration
 import os
 import sys
+
+#__file__ = os.getcwd()
+
 rootpath = os.path.sep.join(os.path.dirname(os.path.abspath(__file__)).split(os.path.sep)[:-1])
 sys.path.append(rootpath)
 
@@ -288,6 +292,7 @@ def update(schedule_original, save_log=True):
 
 
 if __name__ == '__main__':
+    ## Load project
     try:
         fname_activity_book = 'activity_book.pk'
         with open(os.path.sep.join((navipath.fdir_component, fname_activity_book)), 'rb') as f:
@@ -296,7 +301,7 @@ if __name__ == '__main__':
         print('Error: You should run "init.py" first to build "activity_book.pk"')
         sys.exit(1)
 
-    case_num = '01'
+    case_num = '05_structure'
     schedule = import_schedule(case_num)
     schedule_normalized = normallize_duplicated_activity(schedule)
 

@@ -170,10 +170,10 @@ def initial_schedule(case_num):
     schedule = navifunc.grids2schedule(grids=project.sorted_grids)
     navifunc.schedule2xlsx(schedule=schedule, fname=fname_schedule)
 
-
 if __name__ == '__main__':
+    ## Project Constraints
     fname_activity_book = 'activity_book.pk'
-    case_num = '01'
+    case_num = '05_structure'
     duration = 60
 
     ## Activity Book
