@@ -11,7 +11,7 @@ build/
 # Experiments
 tmp/
 .idea/
-schedule/schedule*
+schedule/*
 
 # Jupyter notebook
 .ipynb_checkpoints/
