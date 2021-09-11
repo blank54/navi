@@ -60,134 +60,170 @@ def find_lower_location(location):
     return lower_location
 
 
-#8월29일 추가
-# update schedule파일을 가져온다
-# def load_project(case_num):
-# 날짜와 그리드별 작업 리스트를 가져온다.
+#9월 11일 주피터로 작업한거 옮겨봅니다. 영향을 받는 그리드 영역 찾기까지 했어요!!!
+#predecessor_dist
+import pandas as pd
+from naviutil import NaviPath
+navipath = NaviPath()
 
-# 첫 그리드(예, 2_2_1)에 배정된 작업과 작업의 선행완료 거리값을 확인한다.
-# 예를 들어 거리값이 3을 확인한다.
+activity_pre_dist = pd.read_excel(navipath.activity_pre_dist)
 
-def act_pred_dist(location, activity):
-    return predecessor_dist
-
-#     activity_pre_dist = os.path.sep.join((fdir_template, 'activity_pre_dist.xlsx'))
-#     activity_pre_dist = pd.read_excel(navipath.activity_pre_dist)
-#
-#     for _, line in activity_pre_dist.iterrows():
-
-# 어찌할지...모르겠네요 def set_navisystem(): 참조함.
-#         code = line['code']
-#         predecessor_dist = line['predecessor_dist']
-#         parameters = {
-#             'code':code
-#             'predecessor_dist':predecessor_dist
-#         activities[code] = Activity(parameters=parameters)
-#        .....
+activity_pre_dist.head()
 
 
-# 거리값내에 포함된 그리드 리스트를 만든다.
+#loading activity dist template and making dic
 
-def find_pre_dist_location_x_list(location, predecessor_dist):
-    return pre_dist_location_x_list
+activity_pre_dist_dic = {}
+for _, line in activity_pre_dist.iterrows():
+    #    print(line)
 
-    # 그리드 x값에 거리값을 더하고 뺀값을 리스트로 추가
-    # x+3, x+2, x+1, x+0, x-1, x-2, x-3 (예, 2_2_1 =>  x=2, 5,4,3,2,1,0,-1)
-    # x는 0보다 커야한다. 0보다 작으면 무시 (예, 2_2_1 =>  x=2, 5,4,3,2,1))
-    # x는 그리드 최대값보다 작아야한다. 최대값보다 크면 제거 (예, 2_2_1 =>  max(x)= 4, x=4,3,2,1))
+    #    print(line['code'])
+    #    print(line['predecessor_dist'])
+    activity_pre_dist_dic[line['code']] = line['predecessor_dist']
 
-    x, y, z = location.split('_')
-    pred_dist_value = act_pred_dist(location, activity)  # 파일 activity_pre_dist.xlsx의 작업별 거리정의 값(2열)
+activity_pre_dist_dic
+print(activity_pre_dist_dic)
+
+
+#Loading updated schedule
+productivity_updated_schedule = pd.read_excel('D:/cns/navi-master/navi/schedule/schedule_N-05_structure_C-updated_I-062.xlsx')
+productivity_updated_schedule
+
+#checking activity & dist
+productivity_updated_schedule.iloc[3][0]#첫날의 작업 중 첫번째다 치고
+
+check_pre_dist_act = productivity_updated_schedule.iloc[3][0]
+checked_dist = activity_pre_dist_dic[check_pre_dist_act] #첫날 첫번째 작업의 선행완료거리값
+print(checked_dist)
+
+#grid & activity
+
+
+# productivity_updated_schedule.columns[0]
+#grid_a = productivity_updated_schedule.iloc[3,0] #작업이 있는 첫 그리드를 찾아다 치고
+#print(grid_a)
+
+
+#작업을 가진 그리드 딕셔너리 생성 필요할지는 모르겠음.(현재는 동일 작업으로 함)
+act_grids ={}
+for grid, activity in productivity_updated_schedule.iterrows():
+#     print(activity["Unnamed: 0"]) # grid
+#     print(activity[0]) #index
+#     print(grid) #index
+    grid_list_w_act = {}
+    if activity[0] == check_pre_dist_act: #확인된 작업과 동일한 그리드
+#         print(activity["Unnamed: 0"])     #확인된 작업과 동일한 그리드 출력
+        act_grids[activity["Unnamed: 0"]] = activity[0] #확인된 작업과 동일한 그리드 딕셔너리 생성
+
+print(act_grids)
+
+#finding grids inside influence of act
+# checked_dist값 사용
+# print(checked_dist)
+# x 영향범위
+for grid, activity in act_grids.items():
+    x, y, z = grid.split("_")
+    pre_dist1 = checked_dist
+    pre_dist2 = checked_dist
+    x = int(x)
     pre_dist_location_x_list = []
-    while pred_dist_value > 0
-        pred_dist_x = int(x + pred_dist_value)
-        pre_dist_location_x_list += pred_dist_x
+    while pre_dist1 > 0:
+        pred_dist_x1 = x + pre_dist1
+        #         print(pred_dist_x)
+        pre_dist_location_x_list.append(pred_dist_x1)
+        pre_dist1 = pre_dist1 - 1
 
-    while pred_dist_value > 0 and x > 0
-        pred_dist_x = int(x - pred_dist_value)
-        pre_dist_location_x_list += pred_dist_x
+    while pre_dist2 >= 0:
+        pred_dist_x2 = x - pre_dist2
+        #         print(pred_dist_x)
+        if pred_dist_x2 > 0:
+            pre_dist_location_x_list.append(pred_dist_x2)
+        pre_dist2 = pre_dist2 - 1
 
-    return pre_dist_location_y_list
+    print(pre_dist_location_x_list)
 
-
-def find_pre_dist_location_y_list(location, predecessor_dist):
-    # 그리드 y값에 거리값을 더하고 뺀값을 리스트로 추가
-    # y+3, y+2, y+1, y+0, y-1, y-2, y-3 (예, 2_2_1 =>  y=2, 5,4,3,2,1,0,-1)
-    # y는 0보다 커야한다. 0보다 작으면 제거 무시 (예, 2_2_1 =>  y=2, 5,4,3,2,1))
-    # y는 그리드 최대값보다 작아야한다. 최대값보다 크면 제거 (예, 2_2_1 =>  max(y)=4, y=4,3,2,1))
-
-    x, y, z = location.split('_')
-    pred_dist_value = act_pred_dist(location, activity)  # 파일 activity_pre_dist.xlsx의 작업별 거리정의 값(2열)
+# checked_dist값 사용
+# print(checked_dist)
+# y 영향범위
+for grid, activity in act_grids.items():
+    x, y, z = grid.split("_")
+    pre_dist1 = checked_dist
+    pre_dist2 = checked_dist
+    y = int(y)
     pre_dist_location_y_list = []
-    while pred_dist_value > 0:
-        pred_dist_y = int(y + pred_dist_value)
-        pre_dist_location_y_list += pred_dist_y
+    while pre_dist1 > 0:
+        pred_dist_y1 = y + pre_dist1
+        #         print(pred_dist_y)
+        pre_dist_location_y_list.append(pred_dist_y1)
+        pre_dist1 = pre_dist1 - 1
 
-    while pred_dist_value > 0 and y > 0:
-        pred_dist_y = int(y - pred_dist_value)
-        pre_dist_location_y_list += pred_dist_y
+    while pre_dist2 >= 0:
+        pred_dist_y2 = y - pre_dist2
+        #         print(pred_dist_y)
+        if pred_dist_y2 > 0:
+            pre_dist_location_y_list.append(pred_dist_y2)
+        pre_dist2 = pre_dist2 - 1
 
-    return pre_dist_location_y_list
+    print(pre_dist_location_y_list)
 
-def find_pre_dist_location_z_list(location, activity_code):
-    # 그리드 z값은 동일
-    # z+0 (예, 2_2_1 =>  z=1, 1))
-    # 단 Activity code가 D 인거는 z+0과 z+1값을 리스트로 가집
-    # 단 Activity code가 S 인거는 z+0과 z-1값을 리스트로 가집
+# print(checked_dist)
+act_checked = productivity_updated_schedule.iloc[3][0]
+# print(act_checked)
 
-    x, y, z = location.split('_')
+# Activity code 맨 앞문자
+# print(checked_dist)
+# z 영향범위
+
+for grid, activity in act_grids.items():
+    x, y, z = grid.split("_")
+    pre_dist1 = 1
+    pre_dist2 = int(-1)
+    z = int(z)
     pre_dist_location_z_list = [z]
-    if activity_code in "D":
-        pre_dist_location_z_list += z + 1
+    if 'D' in act_checked:
+        pred_dist_z = z + pre_dist1
+        pre_dist_location_z_list.append(pred_dist_z)
+    elif 'S' in act_checked:
+        pred_dist_z = z + pre_dist2
+        pre_dist_location_z_list.append(pred_dist_z)
 
-    elif activity_code in "S":
-        pre_dist_location_z_list += z - 1
+    print(pre_dist_location_z_list)
 
-    else:
-        pre_dist_location_z_list = z
+#making influence grid
+influence_grids=[]
+for x in pre_dist_location_x_list:
+    x=str(x)
+    for y in pre_dist_location_y_list:
+        y=str(y)
+        for z in pre_dist_location_z_list:
+            z=str(z)
+            influence_x_y_z = []
+            influence_x_y_z.append(x)
+            influence_x_y_z.append(y)
+            influence_x_y_z.append(z)
+            influence_grid = '_'.join(influence_x_y_z)
+            influence_grids.append(influence_grid)
 
-    return pre_dist_location_z_list
+print(influence_grids)
 
-def make_pre_dist_location_list(location, pre_dist_location_x_list, pre_dist_location_y_list, pre_dist_location_z_list):
+# 자신의 그리드 제거
+for grid_except, activity in act_grids.items():
+    while grid_except in influence_grids:
+        influence_grids.remove(grid_except)
 
-    # 그리드 x 첫번째와 y값 전체, z값 결합
-    # 그리드 x 두번째와 y값 전체, z값 결합
-    # ...
-    # 그리드 x 마지막번째와 y값 전체, z값 결합
-    # 거리값내 있는 그리드 리스트를 만든다 (예, 2_2_1 => 5_5_1, 5_4_1, 5_3_1, 5_2_1, 5_1_1, 4_5_1,,... )
-    # 자신의 그리드는 제외한다.
-
-    # for i in range(len(pre_dist_location_x_list):
-    #     pre_dist_location_x_list[i]
-    # for pred_dist_y in pre_dist_location_y_list:
-    #     for pred_dist_z in pre_dist_location_z_list:
-    # pred_dist_location = '_'.join(pre_dist_location_x_list[i], pre_dist_location_y_list[0], pre_dist_location_z_list[0])
-    #
-    # pred_dist_location_list += pred_dist_location
-    # pred_dist_location_list.pop(location)
-    # return pre_dist_location_list
-
-def make_pre_dist_activity_list(updated_schedule, pre_dist_location_list):
-    # 그리드 리스트에 배정되어 있는 Activity 리스트를 만든다.
-    return pre_dist_activity_list
-
-
-
-def check_pre_dist_activity_list(location, pre_dist_activity_list):
-    # 그리드 리스트에 배정된 Activity 리스트와 기준 그리드의 작업과 선후비교한다.
-    # 특정 그리드(예, 2_2_1)에 배정된 작업과 선행작업 여부 검토
-    # 선행작업 있으면 작업을 민다
-
-    if 리스트에 선행작업이 있으면:
-        일정을
-        민다
-    else:
-        일정을
-        유지한다.
+print(influence_grids)
 
 
 
-###8월29일
+#9월 11일
+#영향을 받는 그리드와 첫날 작업 디셔너리 만들기
+#해당 그리드 작업과 작업 디셔너리내 작업의 선후관계 비교하여 일정 미루기
+
+
+
+
+
+
 
 
 def push_workdays_uniformly(schedule, location, after, add):
