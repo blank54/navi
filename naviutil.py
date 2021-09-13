@@ -183,10 +183,19 @@ class NaviFunc:
             print('  | fdir : {}'.format(NaviPath().fdir_schedule))
             print('  | fname: {}'.format(fname))
 
-    def xlsx2schedule(self, activity_book, fname):
-        print(os.path.sep.join((NaviPath().fdir_schedule, fname)))
-        schedule_df = pd.read_excel(os.path.sep.join((NaviPath().fdir_schedule, fname)))
+    def xlsx2schedule(self, activity_book, **kwargs):
+        fpath = kwargs.get('fpath', '')
+        fname = kwargs.get('fname', '')
 
+        if fpath:
+            pass
+        else:
+            try:
+                fpath = os.path.sep.join((NaviPath().fdir_schedule, fname))
+            except:
+                print('ValueNotFoundError: you should give either fpath or fname.')
+
+        schedule_df = pd.read_excel(fpath)
         schedule = defaultdict(dict)
         for row in schedule_df.iterrows():
             location = row[1]['Unnamed: 0']
