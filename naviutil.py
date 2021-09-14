@@ -6,6 +6,7 @@ import os
 import time
 import numpy as np
 import pandas as pd
+import pickle as pk
 from copy import deepcopy
 from collections import defaultdict
 
@@ -34,6 +35,64 @@ class NaviPath:
     def schedule(self, case_num, note):
         return os.path.sep.join((self.fdir_schedule, 'schedule_N-{}_C-{}.xlsx'.format(case_num, note)))
 
+
+class NaviIO:
+    def import_activity_book(self, **kwargs):
+        fdir = kwargs.get('fdir', NaviPath().fdir_component)
+        fname = kwargs.get('fname', 'activity_book.pk')
+        fpath = kwargs.get('fpath', '')
+
+        if not fpath:
+            fpath = os.path.sep.join((fdir, fname))
+
+        try:
+            with open(fpath, 'rb') as f:
+                activity_book = pk.load(f)
+        except FileNotFoundError:
+            print('Error: You should run "init.py" first to build "activity_book.pk"')
+
+        return activity_book
+
+    def schedule2xlsx(self, schedule, fname, verbose=True):
+        '''
+        Convert the schedule into a DataFrame format.
+        '''
+
+        schedule_dict = defaultdict(dict)
+        for location in schedule:
+            for day, activity_code in schedule[location].items():
+                schedule_dict[day][location] = activity_code
+
+        schedule_df = pd.DataFrame(schedule_dict)
+        schedule_df = schedule_df.reindex(sorted(schedule_df.columns), axis=1)
+        schedule_df = schedule_df.sort_index()
+
+        os.makedirs(NaviPath().fdir_schedule, exist_ok=True)
+        schedule_df.to_excel(os.path.sep.join((NaviPath().fdir_schedule, fname)), na_rep='', header=True, index=True)
+
+        if verbose:
+            print('Save Schedule')
+            print('  | fdir : {}'.format(NaviPath().fdir_schedule))
+            print('  | fname: {}'.format(fname))
+
+    def xlsx2schedule(self, activity_book, **kwargs):
+        fpath = kwargs.get('fpath', '')
+        fname = kwargs.get('fname', '')
+
+        if not fpath:
+            fpath = os.path.sep.join((NaviPath().fdir_schedule, fname))
+
+        schedule_df = pd.read_excel(fpath)
+        schedule = defaultdict(dict)
+        for row in schedule_df.iterrows():
+            location = row[1]['Unnamed: 0']
+            schedule[location] = {}
+            for day, activity_code in row[1].items():
+                if activity_code in activity_book.keys():
+                    schedule[location][day] = activity_code
+
+        return schedule
+        
 
 class NaviFunc:
     def order_bw_activity(self, activity_book, activity_code1, activity_code2):
@@ -158,51 +217,6 @@ class NaviFunc:
                     day += 1
                 except IndexError:
                     break
-
-        return schedule
-
-    def schedule2xlsx(self, schedule, fname, verbose=True):
-        '''
-        Convert the schedule into a DataFrame format.
-        '''
-
-        schedule_dict = defaultdict(dict)
-        for location in schedule:
-            for day, activity_code in schedule[location].items():
-                schedule_dict[day][location] = activity_code
-
-        schedule_df = pd.DataFrame(schedule_dict)
-        schedule_df = schedule_df.reindex(sorted(schedule_df.columns), axis=1)
-        schedule_df = schedule_df.sort_index()
-
-        os.makedirs(NaviPath().fdir_schedule, exist_ok=True)
-        schedule_df.to_excel(os.path.sep.join((NaviPath().fdir_schedule, fname)), na_rep='', header=True, index=True)
-
-        if verbose:
-            print('Save Schedule')
-            print('  | fdir : {}'.format(NaviPath().fdir_schedule))
-            print('  | fname: {}'.format(fname))
-
-    def xlsx2schedule(self, activity_book, **kwargs):
-        fpath = kwargs.get('fpath', '')
-        fname = kwargs.get('fname', '')
-
-        if fpath:
-            pass
-        else:
-            try:
-                fpath = os.path.sep.join((NaviPath().fdir_schedule, fname))
-            except:
-                print('ValueNotFoundError: you should give either fpath or fname.')
-
-        schedule_df = pd.read_excel(fpath)
-        schedule = defaultdict(dict)
-        for row in schedule_df.iterrows():
-            location = row[1]['Unnamed: 0']
-            schedule[location] = {}
-            for day, activity_code in row[1].items():
-                if activity_code in activity_book.keys():
-                    schedule[location][day] = activity_code
 
         return schedule
 
