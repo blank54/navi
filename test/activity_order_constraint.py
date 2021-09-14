@@ -17,7 +17,7 @@ from collections import defaultdict
 
 
 def import_schedule(fname):
-    global activit_book
+    global activity_book
 
     schedule = navifunc.xlsx2schedule(activity_book=activity_book, fname=fname)
     normalized_schedule = normallize_duplicated_activity(schedule)
@@ -40,7 +40,7 @@ def normallize_duplicated_activity(schedule):
     return normalized_schedule
 
 def check_activity_order_within_work(local_schedule, activity_code):
-    global activit_book
+    global activity_book
 
     workday = [day for day in local_schedule.keys() if local_schedule[day] == activity_code][0]
 
