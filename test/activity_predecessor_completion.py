@@ -13,8 +13,10 @@ import pickle as pk
 import pandas as pd
 from collections import defaultdict
 
-from naviutil import NaviPath
+from naviutil import NaviPath, NaviIO, NaviFunc
 navipath = NaviPath()
+naviio = NaviIO()
+navifunc = NaviFunc()
 
 def load_project(case_num):
     with open(navipath.proj(case_num), 'rb') as f:
@@ -78,20 +80,35 @@ for _, line in activity_pre_dist.iterrows():
 print(activity_pre_dist_dic)
 
 #Loading updated schedule
-schedule = pd.read_excel('D:/cns/navi-master/navi/schedule/schedule_N-05_structure_C-updated_I-062.xlsx')
-schedule
+# schedule = pd.read_excel('D:/cns/navi-master/navi/schedule/schedule_N-05_structure_C-updated_I-062.xlsx')
+# schedule
 
-# def import_activity_book():
-#     try:
-#         fname_activity_book = 'activity_book.pk'
-#         with open(os.path.sep.join((navipath.fdir_component, fname_activity_book)), 'rb') as f:
-#             activity_book = pk.load(f)
-#     except FileNotFoundError:
-#         print('Error: You should run "init.py" first to build "activity_book.pk"')
 
-# activity_book = import_activity_book()
-# fpath = 'D:/cns/navi-master/navi/schedule/schedule_N-05_structure_C-updated_I-062.xlsx'
-# schedule = navifunc.xlsx2schedule(activity_book=activity_book, fpath=fpath)
+'''COMMENT
+현재 코드에서는 schedule을 DataFrame 형태로 사용하고 계시네요. 호환성을 위해, schedule을 읽어오실 땐 아래의 코드를 사용해주시면 좋겠습니다.
+단, 실행하기 전에 "run/init.py"를 한번 실행해주셔야 "activity_book.pk"가 정상적으로 작동합니다. (최초 한번만 실행해주시면 됩니다.)
+
+이렇게 불러온 schedule은 location->day->activity_code로 iterate하는 dictionary입니다.
+아래에서 "productivity_updated_schedule.iloc[3][0]"이라고 쓴 코드는 "schedule[특정 location][특정 day]"로 치환할 수 있겠습니다.
+이런 방식으로 Line 122-148를 수정해주세요.
+'''
+
+
+
+'''NOTE
+"naviutil.py"에 NaviIO라는 클래스를 추가했습니다.
+앞으로 파일을 읽고쓰는데 사용되는 함수를 모아놓을 예정입니다.
+
+지난 코드에서는 activity_book을 읽어오는데 문제가 있어서 에러가 발생했던 것 같습니다.
+2021.09.14. 현재 제 컴퓨터에서는 잘 실행되는 것을 확인했습니다.
+여전히 에러가 발생한다면 "run/init.py"를 다시 실행해주세요.
+'''
+
+
+
+activity_book = naviio.import_activity_book()
+fpath = 'D:/cns/navi-master/navi/schedule/schedule_N-05_structure_C-updated_I-062.xlsx'
+schedule = naviio.xlsx2schedule(activity_book=activity_book, fpath=fpath)
 
 # 여기는 안되서 일단 옮겨만 놨습니다.
 
