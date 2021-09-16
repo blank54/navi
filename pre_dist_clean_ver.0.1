@@ -9,7 +9,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 44,
+   "execution_count": 1,
    "metadata": {},
    "outputs": [],
    "source": [
@@ -19,27 +19,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 45,
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "import os\n",
-    "import sys\n",
-    "import itertools\n",
-    "import pickle as pk\n",
-    "import pandas as pd\n",
-    "from copy import deepcopy\n",
-    "from collections import defaultdict\n",
-    "from collections import defaultdict, Counter\n",
-    "from object import  Activity, Grid, Project\n",
-    "from naviutil import NaviPath, NaviFunc\n",
-    "navipath = NaviPath()\n",
-    "navifunc = NaviFunc()\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 46,
+   "execution_count": 1,
    "metadata": {},
    "outputs": [
     {
@@ -106,7 +86,7 @@
        "4  T10020                 3"
       ]
      },
-     "execution_count": 46,
+     "execution_count": 1,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -116,7 +96,10 @@
     "from naviutil import NaviPath\n",
     "navipath = NaviPath()\n",
     "\n",
-    "activity_pre_dist = pd.read_excel(navipath.activity_pre_dist)\n"
+    "activity_pre_dist = pd.read_excel(navipath.activity_pre_dist)\n",
+    "\n",
+    "activity_pre_dist.head()\n",
+    "\n"
    ]
   },
   {
@@ -128,7 +111,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 47,
+   "execution_count": 2,
    "metadata": {},
    "outputs": [
     {
@@ -142,8 +125,13 @@
    "source": [
     "activity_pre_dist_dic = {}\n",
     "for _, line in activity_pre_dist.iterrows():\n",
+    "#    print(line)\n",
+    "    \n",
+    "#    print(line['code'])\n",
+    "#    print(line['predecessor_dist'])\n",
     "    activity_pre_dist_dic[line['code']] = line['predecessor_dist']\n",
     "\n",
+    "activity_pre_dist_dic\n",
     "print(activity_pre_dist_dic)"
    ]
   },
@@ -156,7 +144,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 48,
+   "execution_count": 14,
    "metadata": {},
    "outputs": [
     {
@@ -705,28 +693,14 @@
        "[18 rows x 78 columns]"
       ]
      },
-     "execution_count": 48,
+     "execution_count": 14,
      "metadata": {},
      "output_type": "execute_result"
     }
    ],
    "source": [
     "schedule = pd.read_excel('D:/cns/navi-master/navi/schedule/schedule_N-05_structure_C-updated_I-062.xlsx')\n",
-    "schedule\n",
-    "\n",
-    "# def import_activity_book():\n",
-    "#     try:\n",
-    "#         fname_activity_book = 'activity_book.pk'\n",
-    "#         with open(os.path.sep.join((navipath.fdir_component, fname_activity_book)), 'rb') as f:\n",
-    "#             activity_book = pk.load(f)\n",
-    "#     except FileNotFoundError:\n",
-    "#         print('Error: You should run \"init.py\" first to build \"activity_book.pk\"')\n",
-    "\n",
-    "# activity_book = import_activity_book()\n",
-    "\n",
-    "\n",
-    "# fpath = 'D:/cns/navi-master/navi/schedule/schedule_N-05_structure_C-updated_I-062.xlsx'\n",
-    "# schedule = navifunc.xlsx2schedule(activity_book=activity_book, fpath=fpath)\n"
+    "schedule\n"
    ]
   },
   {
@@ -738,7 +712,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 49,
+   "execution_count": 16,
    "metadata": {},
    "outputs": [
     {
@@ -747,7 +721,7 @@
        "'S10010'"
       ]
      },
-     "execution_count": 49,
+     "execution_count": 16,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -758,7 +732,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 50,
+   "execution_count": 15,
    "metadata": {},
    "outputs": [
     {
@@ -784,7 +758,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 51,
+   "execution_count": 17,
    "metadata": {},
    "outputs": [
     {
@@ -796,10 +770,23 @@
     }
    ],
    "source": [
+    "\n",
+    "# productivity_updated_schedule.columns[0]\n",
+    "#grid_a = productivity_updated_schedule.iloc[3,0] #작업이 있는 첫 그리드를 찾아다 치고\n",
+    "#print(grid_a)\n",
+    "\n",
+    "\n",
+    "#작업을 가진 그리드 딕셔너리 생성 필요할지는 모르겠음.(현재는 동일 작업으로 함)\n",
     "act_grids ={}\n",
-    "for location, activity in schedule.iterrows():\n",
+    "for grid, activity in schedule.iterrows():\n",
+    "#     print(activity[\"Unnamed: 0\"]) # grid\n",
+    "#     print(activity[0]) #index\n",
+    "#     print(grid) #index\n",
+    "    grid_list_w_act = {}\n",
     "    if activity[0] == check_pre_dist_act: #확인된 작업과 동일한 그리드\n",
+    "#         print(activity[\"Unnamed: 0\"])     #확인된 작업과 동일한 그리드 출력\n",
     "        act_grids[activity[\"Unnamed: 0\"]] = activity[0] #확인된 작업과 동일한 그리드 딕셔너리 생성\n",
+    "\n",
     "print(act_grids)"
    ]
   },
@@ -812,7 +799,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 76,
+   "execution_count": 28,
    "metadata": {},
    "outputs": [
     {
@@ -864,7 +851,7 @@
     "        pre_dist_location_z_list.append(pred_dist_z)\n",
     "        \n",
     "   \n",
-    "    print(pre_dist_location_x_list,pre_dist_location_y_list,pre_dist_location_z_list)\n"
+    "    print(pre_dist_location_x_list, pre_dist_location_y_list, pre_dist_location_z_list)\n"
    ]
   },
   {
@@ -876,7 +863,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 54,
+   "execution_count": 38,
    "metadata": {},
    "outputs": [
     {
@@ -900,14 +887,14 @@
     "            influence_x_y_z.append(y)\n",
     "            influence_x_y_z.append(z)\n",
     "            influence_location = '_'.join(influence_x_y_z)            \n",
-    "            influence_locations.append(influence_location)\n",
+    "            influence_locations.append(influence_location)            \n",
     "\n",
     "print(influence_locations)\n"
    ]
   },
   {
    "cell_type": "code",
-   "execution_count": 55,
+   "execution_count": 40,
    "metadata": {},
    "outputs": [
     {
@@ -920,9 +907,9 @@
    ],
    "source": [
     "# 자신의 그리드 제거\n",
-    "for location_except, activity in act_grids.items():\n",
-    "    while location_except in influence_locations:\n",
-    "        influence_locations.remove(location_except)\n",
+    "for grid_except, activity in act_grids.items():\n",
+    "    while grid_except in influence_locations:\n",
+    "        influence_locations.remove(grid_except)\n",
     "        \n",
     "print(influence_locations)"
    ]
@@ -931,12 +918,12 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "### activity in influence locations "
+    "### activity in influence grids "
    ]
   },
   {
    "cell_type": "code",
-   "execution_count": 75,
+   "execution_count": 41,
    "metadata": {},
    "outputs": [
     {
@@ -1082,35 +1069,16 @@
    ],
    "source": [
     "#location 리스트와 o일의 작업리스트 중 influence location에 있는 거만 작업리스트 만들기\n",
-    "\n",
     "acts_in_Influence_locations = {}\n",
     "for location, activity in schedule.iterrows():\n",
     "     if activity[\"Unnamed: 0\"] in influence_locations:\n",
     "        acts_in_Influence_locations[activity[\"Unnamed: 0\"]]=activity[1:20] #1은 day로 치환 필요\n",
-    "        \n",
     "print(acts_in_Influence_locations)\n"
    ]
   },
   {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
-    "### checking activity logic with influence locations"
-   ]
-  },
-  {
    "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#영향받는 location에 있는 작업의 당일과 이후 20일이내에 check_pre_dist_act(검사하고 있는 작업)보다 선행인지 확인\n",
-    "# 선행작업 있으면 작업을 민다"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 74,
+   "execution_count": 43,
    "metadata": {},
    "outputs": [
     {
@@ -1177,7 +1145,7 @@
        "4      A41510    A48510"
       ]
      },
-     "execution_count": 74,
+     "execution_count": 43,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -1189,14 +1157,104 @@
   },
   {
    "cell_type": "code",
+   "execution_count": 45,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "def check_activity_order_within_work(local_schedule, activity_code):\n",
+    "    global activity_book\n",
+    "\n",
+    "    workday = [day for day in local_schedule.keys() if local_schedule[day] == activity_code][0]\n",
+    "\n",
+    "    conflict_items = []\n",
+    "    for day in range(workday, max(local_schedule.keys())+1, 1):\n",
+    "        try:\n",
+    "            activity_code2 = local_schedule[day]\n",
+    "            activity_1 = activity_book[activity_code]\n",
+    "            activity_2 = activity_book[activity_code2]\n",
+    "        except KeyError:\n",
+    "            continue\n",
+    "        \n",
+    "        if activity_code2 in activity_1.successor:\n",
+    "            order = 'fine'\n",
+    "        elif activity_code2 in activity_1.predecessor:\n",
+    "            order = 'conflict'\n",
+    "        else:\n",
+    "            order = 'irrelevant'\n",
+    "\n",
+    "        if order == 'conflict':\n",
+    "            conflict_items.append((day, activity_code2))\n",
+    "\n",
+    "    return conflict_items\n",
+    "\n",
+    "def reorder_activity(local_schedule, activity_code, conflict_items):\n",
+    "    local_schedule_updated = {}\n",
+    "\n",
+    "    current = [day for day in local_schedule.keys() if local_schedule[day] == activity_code][0]\n",
+    "    move_to = max([day for day, _ in conflict_items])\n",
+    "\n",
+    "    for day in range(0, len(local_schedule), 1):\n",
+    "        if day < current or day > move_to:\n",
+    "            local_schedule_updated[day] = local_schedule[day]\n",
+    "        elif day == current:\n",
+    "            local_schedule_updated[move_to] = local_schedule[day]\n",
+    "        else:\n",
+    "            local_schedule_updated[day-1] = local_schedule[day]\n",
+    "\n",
+    "    return {d: a for d, a in sorted(local_schedule_updated.items(), key=lambda x:x[0])}\n",
+    "\n",
+    "def update_order_in_local_schedule(local_schedule, verbose=False):\n",
+    "    for day, activity_code in sorted(local_schedule.items(), key=lambda x:x[0]):\n",
+    "        conflict_items = check_activity_order_within_work(local_schedule, activity_code)\n",
+    "        \n",
+    "        if verbose:\n",
+    "            print('{:2}: {}'.format(day, activity_code))\n",
+    "        else:\n",
+    "            pass\n",
+    "\n",
+    "        if conflict_items:\n",
+    "            for conflicted_day, conflicted_activity_code in conflict_items:\n",
+    "                print('  | Conflicts at {}({}) <-> {}({})'.format(activity_code, day, conflicted_activity_code, conflicted_day))\n",
+    "\n",
+    "            local_schedule_updated = deepcopy(reorder_activity(local_schedule, activity_code, conflict_items))\n",
+    "            return local_schedule_updated\n",
+    "        else:\n",
+    "            continue\n",
+    "\n",
+    "    return local_schedule\n",
+    "\n",
+    "def update_order(schedule, verbose_iter=False, verbose_local=False):\n",
+    "    schedule_updated = defaultdict(dict)\n",
+    "\n",
+    "    iteration = 0\n",
+    "    for location in schedule.keys():\n",
+    "        local_schedule_original = deepcopy(schedule[location])\n",
+    "        while True:\n",
+    "            iteration += 1\n",
+    "\n",
+    "            if verbose_iter:\n",
+    "                print('============================================================')\n",
+    "                print('Iteration: {:03,d} ({})'.format(iteration, location))\n",
+    "            else:\n",
+    "                pass\n",
+    "\n",
+    "            local_schedule_updated = deepcopy(update_order_in_local_schedule(local_schedule=local_schedule_original, verbose=verbose_local))\n",
+    "            if navifunc.compare_local_schedule(local_schedule_original, local_schedule_updated) == 'same':\n",
+    "                schedule_updated[location] = deepcopy(local_schedule_updated)\n",
+    "                break\n",
+    "            else:\n",
+    "                local_schedule_original = deepcopy(local_schedule_updated)\n",
+    "\n",
+    "    return schedule_updated\n"
+   ]
+  },
+  {
+   "cell_type": "code",
    "execution_count": null,
    "metadata": {},
    "outputs": [],
    "source": [
-    "#작성하신 코드를 변형해서 활용해보려고 합니다. 이거로 가능한지는 모르겠네요.\n",
-    "\n",
-    "# def set_orders_in_activity_book():\n",
-    "#     global fname_activity_book\n",
     "\n",
     "#     with open(os.path.sep.join((navipath.fdir_component, fname_activity_book)), 'rb') as f:\n",
     "#         activity_book = pk.load(f)\n",
@@ -1269,20 +1327,84 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "#제 제약조건상에 오류를 발견했어요....\n",
-    "#골조 Workpackage(우리 파일에 Major Actiity)에 세부 작업 먹놓기.... 타설, 양생까지 작업이 있다면\n",
-    "#하부층의 양생이 완료된 후에 상부층 먹놓기가 가능하니까,,, 그냥 선후 작업만 확인해서는 안되네요\n",
-    "#동일층에서는 먹놓기 생산성 만큼 마무리 되면 다른 구역의 먹놓기 작업이 진행가능....\n",
-    "#제약조건이 추가되어야 하네요....\n",
-    "#머리가 좀 아프므로, 레벨의 변화 없이 동일 레벨에서 작업하는거로 데이타 파일을 다시 구성해야겠습니다. \n",
-    "#1층 골조와 2....층 골조 Code를 다르게해서 선후 조건을 걸어야겠어요.... 고민....\n",
     "\n",
-    "#그리고 대세에 영향이 없을 수 있으므로 \n",
-    "#동일층 내에서 공정계획 자동화하는거에 집중하고\n",
-    "#추가로 생산성 고려할때 가까운 location을 우선배정하는거 까지만 제약 추가하고\n",
-    "#시각화 좀 고민하고\n",
-    "#논문작성에 집중해볼까합니다.\n",
-    "#그래도 희망이 보이네요^^ 감사해요\n"
+    "def check_pre_dist_activity_list(location, pre_dist_activity_list):    \n",
+    "# 그리드 리스트에 배정된 Activity 리스트와 기준 그리드의 작업과 선후비교한다.\n",
+    "# 특정 그리드(예, 2_2_1)에 배정된 작업과 선행작업 여부 검토\n",
+    "# 선행작업 있으면 작업을 민다\n",
+    "\n",
+    "    if 리스트에 선행작업이 있으면 : \n",
+    "        일정을 민다\n",
+    "    else : \n",
+    "        일정을 유지한다. \n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "activity_pre_dist_dic['W11040']\n",
+    "activity_pre_dist_dic['W10030']\n",
+    "\n",
+    "def act_pred_dist(activity_code):\n",
+    "    predecessor_dist = activity_pre_dist_dic[activity_code]\n",
+    "    return predecessor_dist\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "def act_pred_dist(activity_code):\n",
+    "     return predecessor_dist\n",
+    "\n",
+    "    for _, line in activity_pre_dist.iterrows(): #이해안됨 def set_navisystem(): 참조함.\n",
+    "        code = line['code']\n",
+    "        predecessor_dist = line['predecessor_dist']\n",
+    "        parameters = {\n",
+    "            'code':code\n",
+    "            'predecessor_dist':predecessor_dist\n",
+    "        activities[code] = Activity(parameters=parameters)\n",
+    "#        .....\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "\n",
+    "pre_dist_cal_dic = {}\n",
+    "for _, line,  in dist_cal.iterrows():\n",
+    "#   print(line[])\n",
+    "    \n",
+    "    print(_)\n",
+    "    print(line[0])\n",
+    "#  activity_pre_dist_dic[line['code']] = line['predecessor_dist']\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "pre_dist_location_x_list"
    ]
   }
  ],
