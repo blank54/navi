@@ -208,46 +208,6 @@ def activity_productivity_constraint(schedule, daily_work_plan):
     else:
         return schedule
 
-# 생산성은 동일레벨(Z값이 동일 그리드끼리만)계산
-# Z값이 다를 경우 다른 일정으로 진행
-# 현재는 1개 팀으로 운영기준
-# 전체기간 내 완료가 불가능할 경우, 팀의 수를 늘려야하며,
-# 각 작업팀이 Z값이 다른 그리드에서 작업하도록 하거나 동일한 Z내에서 거리가 먼 영역을 작업하도록 함.
-
-### Activity Predecessor Completion Constraint
-# def check_activity_dis(activity_code):
-#     for day, works, location in ????: #
-
-# # import updated schedule
-# 날짜, 그리드, 작업, 작업선행완료 거리값으로 디셔너리 생성
-# 그리드와 작업선행완료 거리값이 해당되는 그리드값 생성
-# # 작업별 순서 절대값 비교
-
-
-# def check_activity_type(activity_code):
-#     if activity_code[0] == "d":
-#         #activiy code가 d로 시작하면 위에서 아래로, 그리드 z값이 1씩 줄어드는 순서로 작업한다
-#         #선행완료 거리 제약에 1,1,-2는 *,*,-1의 거리 범위에 선행작업이 완료되어야 작업가능
-#         # excavation
-
-#         return .....
-#     elif activity_code[0] == "s":
-#         #activiy code가 s로 시작하면 위에서 아래로, 그리드 z값이 1씩 늘어나는 순서로 작업한다
-#         #선행완료 거리 제약에 1,1,-1는 *,*,-2의 거리 범위에 선행작업이 완료되어야 작업가능
-#         # structure
-#         return .....
-#     elif activity_code[0] == "m":
-#         #activiy code가 m로 시작하면 z값을 무시 작업한다
-#         # milestone
-#         return .....
-#     else:
-#         #activiy code가 s나 d가 아니면
-#         #선행완료 거리 제약에 1,1,-1는 *,*,-1의 거리 범위에 선행작업이 완료되어야 작업가능 (동일 레벨만 고려하고)
-#         #동일 레벨에서 생산성을 반영
-#         return 'fine'
-
-# #작업이 선행작업
-
 
 ## Update schedule
 def update(schedule_original, save_log=True):
@@ -301,7 +261,7 @@ if __name__ == '__main__':
         print('Error: You should run "init.py" first to build "activity_book.pk"')
         sys.exit(1)
 
-    case_num = '05_structure'
+    case_num = '001'
     schedule = import_schedule(case_num)
     schedule_normalized = normallize_duplicated_activity(schedule)
 
