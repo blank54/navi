@@ -13,9 +13,10 @@ rootpath = os.path.sep.join(os.path.dirname(os.path.abspath(__file__)).split(os.
 sys.path.append(rootpath)
 
 from object import Activity, Grid, Project
-from naviutil import NaviPath, NaviFunc
+from naviutil import NaviPath, NaviFunc, NaviIO
 navipath = NaviPath()
 navifunc = NaviFunc()
+naviio = NaviIO()
 
 import pickle as pk
 import pandas as pd
@@ -168,7 +169,7 @@ def initial_schedule(case_num):
 
     fname_schedule = 'C-{}.xlsx'.format(case_num)
     schedule = navifunc.grids2schedule(grids=project.sorted_grids)
-    navifunc.schedule2xlsx(schedule=schedule, fname=fname_schedule)
+    naviio.schedule2xlsx(schedule=schedule, fname=fname_schedule)
 
 if __name__ == '__main__':
     ## Project Constraints
