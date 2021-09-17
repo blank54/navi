@@ -11,9 +11,10 @@ import sys
 rootpath = os.path.sep.join(os.path.dirname(os.path.abspath(__file__)).split(os.path.sep)[:-1])
 sys.path.append(rootpath)
 
-from naviutil import NaviPath, NaviFunc
+from naviutil import NaviPath, NaviFunc, NaviIO
 navipath = NaviPath()
 navifunc = NaviFunc()
+naviio = NaviIO()
 
 import shutil
 import itertools
@@ -30,7 +31,7 @@ def import_schedule(case_num):
 
     try:
         fname_initial_schedule = 'C-{}.xlsx'.format(case_num)
-        schedule = navifunc.xlsx2schedule(activity_book=activity_book, fname=fname_initial_schedule)
+        schedule = naviio.xlsx2schedule(activity_book=activity_book, fname=fname_initial_schedule)
         return schedule
     except FileNotFoundError:
         print('Error: You should run "init.py" first to build "C-{}.xlsx"'.format(case_num))
@@ -57,7 +58,7 @@ def normallize_duplicated_activity(schedule):
     if os.path.exists(fdir):
         shutil.rmtree(fdir)
     os.makedirs(fdir)
-    navifunc.schedule2xlsx(schedule_normalized, fname, verbose=False)
+    naviio.schedule2xlsx(schedule_normalized, fname, verbose=False)
     return schedule_normalized
 
 ## Activity Order Constraint
@@ -237,8 +238,8 @@ def update(schedule_original, save_log=True):
             iteration += 1
 
         if save_log:
-            navifunc.schedule2xlsx(schedule_updated_order, fname='C-{}/I-{:03,d}_01-order.xlsx'.format(case_num, iteration), verbose=False)
-            navifunc.schedule2xlsx(schedule_updated_productivity, fname='C-{}/I-{:03,d}_02-productivity.xlsx'.format(case_num, iteration), verbose=False)
+            naviio.schedule2xlsx(schedule_updated_order, fname='C-{}/I-{:03,d}_01-order.xlsx'.format(case_num, iteration), verbose=False)
+            naviio.schedule2xlsx(schedule_updated_productivity, fname='C-{}/I-{:03,d}_02-productivity.xlsx'.format(case_num, iteration), verbose=False)
         else:
             pass
 
@@ -253,13 +254,7 @@ def update(schedule_original, save_log=True):
 
 if __name__ == '__main__':
     ## Load project
-    try:
-        fname_activity_book = 'activity_book.pk'
-        with open(os.path.sep.join((navipath.fdir_component, fname_activity_book)), 'rb') as f:
-            activity_book = pk.load(f)
-    except FileNotFoundError:
-        print('Error: You should run "init.py" first to build "activity_book.pk"')
-        sys.exit(1)
+    activity_book = naviio.import_activity_book()
 
     case_num = '001'
     schedule = import_schedule(case_num)
