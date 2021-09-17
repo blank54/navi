@@ -15,6 +15,7 @@ schedule/*
 
 # Jupyter notebook
 .ipynb_checkpoints/
+*.ipynb
 
 # Data
 *.pdf
