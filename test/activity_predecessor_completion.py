@@ -107,14 +107,14 @@ print(activity_pre_dist_dic)
 
 
 activity_book = naviio.import_activity_book()
-fpath = 'D:/cns/navi-master/navi/schedule/schedule_N-05_structure_C-updated_I-062.xlsx'
+fpath = 'D:/cns/navi-master/navi/schedule/C-001/I-1,139_01-order.xlsx'
 schedule = naviio.xlsx2schedule(activity_book=activity_book, fpath=fpath)
+schedule
 
-# 여기는 안되서 일단 옮겨만 놨습니다.
+
 
 #checking activity & dist
-schedule.iloc[3][0]#첫날의 작업 중 첫번째다 치고
-check_pre_dist_act = schedule.iloc[3][0]
+check_pre_dist_act = schedule['1_2_0'][3]
 checked_dist = activity_pre_dist_dic[check_pre_dist_act] #첫날 첫번째 작업의 선행완료거리값
 print(checked_dist)
 
