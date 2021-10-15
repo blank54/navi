@@ -174,8 +174,8 @@ def initial_schedule(case_num):
 if __name__ == '__main__':
     ## Project Constraints
     fname_activity_book = 'activity_book.pk'
-    case_num = '002'
-    duration = 100
+    case_num = '003'
+    duration = 15
 
     ## Activity Book
     init_activity_book()

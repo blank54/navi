@@ -256,7 +256,7 @@ if __name__ == '__main__':
     ## Load project
     activity_book = naviio.import_activity_book()
 
-    case_num = '002'
+    case_num = '003'
     schedule = import_schedule(case_num)
     schedule_normalized = normallize_duplicated_activity(schedule)
 

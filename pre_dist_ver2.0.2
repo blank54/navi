@@ -1,0 +1,740 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# predecessor_dist"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 44,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#Class Project는 불변\n",
+    "#Class Schedule은 변경"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import os\n",
+    "import sys\n",
+    "import itertools\n",
+    "import pickle as pk\n",
+    "import pandas as pd\n",
+    "from copy import deepcopy\n",
+    "from collections import defaultdict\n",
+    "from collections import defaultdict, Counter\n",
+    "from object import  Activity, Grid, Project\n",
+    "from naviutil import NaviPath, NaviFunc, NaviIO\n",
+    "navipath = NaviPath()\n",
+    "navifunc = NaviFunc()\n",
+    "naviio = NaviIO()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "from naviutil import NaviPath\n",
+    "navipath = NaviPath()\n",
+    "\n",
+    "activity_pre_dist = pd.read_excel(navipath.activity_pre_dist)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### loading activity dist template and making dic"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "{'M00009': 10, 'M00001': 0, 'M00007': 0, 'T10010': 3, 'T10020': 3, 'T10030': 3, 'T10040': 3, 'T10050': 3, 'T10060': 3, 'T10070': 3, 'T10080': 3, 'T10090': 3, 'T30010': 1, 'T30020': 1, 'T30030': 1, 'T30031': 1, 'T30032': 1, 'T30033': 1, 'T30034': 1, 'T30035': 1, 'T30036': 1, 'T30040': 1, 'T30050': 1, 'T32010': 1, 'T32020': 1, 'T35010': 1, 'T35020': 1, 'T35030': 1, 'T35031': 1, 'T35032': 1, 'T35033': 1, 'T35034': 1, 'T35035': 1, 'T35036': 1, 'T35040': 1, 'T35050': 1, 'T37010': 1, 'W10010': 5, 'W10020': 3, 'W10030': 2, 'W10040': 1, 'W10050': 1, 'W10060': 1, 'W10070': 1, 'W11010': 5, 'W11020': 1, 'W11030': 1, 'W11040': 1, 'D10010': 2, 'D10020': 0, 'D10030': 0, 'D11010': 3, 'D12010': 3, 'D12020': 3, 'R10010': 5, 'R10020': 3, 'R11010': 3, 'R11020': 3, 'R11030': 3, 'R12010': 5, 'R12020': 1, 'F20010': 2, 'F20020': 3, 'F20030': 2, 'F20040': 2, 'F20050': 3, 'F20051': 0, 'F20060': 2, 'F20070': 3, 'S10010': 3, 'S10020': 2, 'S10030': 1, 'S10040': 2, 'S10050': 3, 'S10060': 3, 'S10061': 0, 'S10070': 3, 'S11010': 2, 'S11020': 2, 'S11030': 1, 'S11040': 3, 'S11050': 3, 'S11051': 0, 'S11060': 3, 'A41510': 3, 'A44510': 3, 'A44520': 3, 'A44521': 3, 'A45010': 3, 'A45011': 3, 'A45012': 3, 'A48510': 3, 'A48520': 3, 'A48530': 3, 'A50510': 3, 'A50520': 3, 'A51010': 3, 'A52010': 3, 'A53010': 3, 'A53020': 3, 'A55010': 3, 'A57510': 3, 'A57520': 3, 'A57530': 3, 'A58010': 3, 'A59010': 3, 'A59020': 3, 'A59030': 3, 'A59510': 3, 'A60510': 3, 'A60520': 3, 'A60530': 3, 'A61010': 3, 'A61020': 3, 'A62510': 3, 'A64010': 3, 'A60020': 3, 'A67010': 3, 'A41810': 3, 'A43010': 3, 'A43020': 3, 'A43021': 3, 'A43022': 3, 'A45510': 3, 'A45520': 3, 'A61510': 3, 'A61520': 3, 'A61530': 3, 'A61540': 3, 'A66510': 3, 'A46010': 3, 'A46020': 3, 'A53510': 3, 'A53520': 3, 'A54510': 3, 'A54520': 3, 'A54530': 3, 'A62010': 3, 'A62020': 3, 'A62030': 3, 'A62040': 3, 'A62050': 3, 'A63010': 3, 'A63020': 3, 'A49510': 3, 'A49520': 3, 'A49530': 3, 'A49540': 3, 'A56510': 3, 'A56520': 3, 'A57010': 3, 'A60010': 3, 'A60710': 3, 'A60720': 3, 'A66010': 3, 'A52510': 3, 'A52520': 3, 'A52530': 3, 'A54010': 3, 'A54020': 3, 'A54030': 3, 'A47510': 3, 'A47520': 3, 'A47530': 3, 'A51510': 3, 'A51520': 3, 'A51530': 3}\n"
+     ]
+    }
+   ],
+   "source": [
+    "activity_pre_dist_dic = {}\n",
+    "for _, line in activity_pre_dist.iterrows():\n",
+    "    activity_pre_dist_dic[line['code']] = line['predecessor_dist']\n",
+    "\n",
+    "print(activity_pre_dist_dic)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Loading updated schedule"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 78,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "defaultdict(dict,\n",
+       "            {'1_1_0': {0: 'W10010',\n",
+       "              1: 'W10020',\n",
+       "              2: 'W10030',\n",
+       "              3: 'W10040',\n",
+       "              4: 'W10041',\n",
+       "              5: 'W10050',\n",
+       "              6: 'W10051',\n",
+       "              7: 'W10060',\n",
+       "              8: 'W10061',\n",
+       "              9: 'W10070',\n",
+       "              10: 'W10080'},\n",
+       "             '1_2_0': {0: 'W10010',\n",
+       "              1: 'W10020',\n",
+       "              2: 'W10030',\n",
+       "              3: 'W10040',\n",
+       "              4: 'W10041',\n",
+       "              5: 'W10050',\n",
+       "              6: 'W10051',\n",
+       "              7: 'W10060',\n",
+       "              8: 'W10061',\n",
+       "              9: 'W10070',\n",
+       "              10: 'W10080'},\n",
+       "             '1_3_0': {0: 'W10010',\n",
+       "              1: 'W10020',\n",
+       "              2: 'W10030',\n",
+       "              3: 'W10040',\n",
+       "              4: 'W10041',\n",
+       "              5: 'W10050',\n",
+       "              6: 'W10051',\n",
+       "              7: 'W10060',\n",
+       "              8: 'W10061',\n",
+       "              9: 'W10070',\n",
+       "              10: 'W10080'},\n",
+       "             '2_1_0': {0: 'W10010',\n",
+       "              1: 'W10020',\n",
+       "              2: 'W10030',\n",
+       "              3: 'W10040',\n",
+       "              4: 'W10041',\n",
+       "              5: 'W10050',\n",
+       "              6: 'W10051',\n",
+       "              7: 'W10060',\n",
+       "              8: 'W10061',\n",
+       "              9: 'W10070',\n",
+       "              10: 'W10080'},\n",
+       "             '3_1_0': {0: 'W10010',\n",
+       "              1: 'W10020',\n",
+       "              2: 'W10030',\n",
+       "              3: 'W10040',\n",
+       "              4: 'W10041',\n",
+       "              5: 'W10050',\n",
+       "              6: 'W10051',\n",
+       "              7: 'W10060',\n",
+       "              8: 'W10061',\n",
+       "              9: 'W10070',\n",
+       "              10: 'W10080'},\n",
+       "             '3_2_0': {0: 'W10010',\n",
+       "              1: 'W10020',\n",
+       "              2: 'W10030',\n",
+       "              3: 'W10040',\n",
+       "              4: 'W10041',\n",
+       "              5: 'W10050',\n",
+       "              6: 'W10051',\n",
+       "              7: 'W10060',\n",
+       "              8: 'W10061',\n",
+       "              9: 'W10070',\n",
+       "              10: 'W10080'}})"
+      ]
+     },
+     "execution_count": 78,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "activity_book = naviio.import_activity_book()\n",
+    "fpath = 'D:/cns/navi-master/navi/schedule/C-003.xlsx'\n",
+    "schedule = naviio.xlsx2schedule(activity_book=activity_book, fpath=fpath)\n",
+    "schedule\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### checking activity & dist "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 101,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "5\n",
+      "W10010\n"
+     ]
+    }
+   ],
+   "source": [
+    "temp_location = '1_1_0'\n",
+    "day = 0\n",
+    "\n",
+    "check_pre_dist_act = schedule[temp_location][day]\n",
+    "checked_dist = activity_pre_dist_dic[check_pre_dist_act] #첫날 첫번째 작업의 선행완료거리값\n",
+    "print(checked_dist)\n",
+    "print(check_pre_dist_act)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "###   finding grids inside influence of act"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 100,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[4, 3, 2, 1] [4, 3, 2, 1] [0]\n"
+     ]
+    }
+   ],
+   "source": [
+    "#특정 작업의 영향거리 내 Location만들기1\n",
+    "\n",
+    "location_to_check = []\n",
+    "location_to_check.append(temp_location)\n",
+    "\n",
+    "for location in location_to_check:\n",
+    "    x, y, z = location.split(\"_\")\n",
+    "    pre_dist1 = checked_dist\n",
+    "    pre_dist2 = checked_dist\n",
+    "    pre_dist_z1 = 1\n",
+    "    pre_dist_z2 = int(-1)\n",
+    "    x = int(x)\n",
+    "    y = int(y)\n",
+    "    z = int(z)\n",
+    "    pre_dist_location_x_list = []\n",
+    "    pre_dist_location_y_list = []\n",
+    "    pre_dist_location_z_list = [z]\n",
+    "    while pre_dist1 > 0:\n",
+    "        pred_dist_x1 = x + pre_dist1\n",
+    "        pre_dist_location_x_list.append(pred_dist_x1)\n",
+    "        pred_dist_y1 = y + pre_dist1\n",
+    "        pre_dist_location_y_list.append(pred_dist_y1)\n",
+    "        pre_dist1 = pre_dist1 - 1\n",
+    "\n",
+    "    while pre_dist2 >= 0:\n",
+    "        pred_dist_x2 = x - pre_dist2\n",
+    "        pred_dist_y2 = y - pre_dist2\n",
+    "        if pred_dist_x2 > 0:\n",
+    "            pre_dist_location_x_list.append(pred_dist_x2)\n",
+    "        if pred_dist_y2 > 0:\n",
+    "            pre_dist_location_y_list.append(pred_dist_y2)\n",
+    "        pre_dist2 = pre_dist2 - 1\n",
+    "\n",
+    "#     if 'D' in check_pre_dist_act:\n",
+    "#         pred_dist_z = z + pre_dist_z1\n",
+    "#         pre_dist_location_z_list.append(pred_dist_z)\n",
+    "#     elif 'S' in check_pre_dist_act:\n",
+    "#         pred_dist_z = z + pre_dist_z2\n",
+    "#         pre_dist_location_z_list.append(pred_dist_z)\n",
+    "\n",
+    "    print(pre_dist_location_x_list,pre_dist_location_y_list,pre_dist_location_z_list)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### making influence grid"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 86,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "['4_4_0', '4_3_0', '4_2_0', '4_1_0', '3_4_0', '3_3_0', '3_2_0', '3_1_0', '2_4_0', '2_3_0', '2_2_0', '2_1_0', '1_4_0', '1_3_0', '1_2_0', '1_1_0']\n"
+     ]
+    }
+   ],
+   "source": [
+    "#특정 작업의 영향거리 내 Location만들기\n",
+    "\n",
+    "influence_locations=[]\n",
+    "for x in pre_dist_location_x_list:\n",
+    "    x=str(x)\n",
+    "    for y in pre_dist_location_y_list:\n",
+    "        y=str(y)\n",
+    "        for z in pre_dist_location_z_list:\n",
+    "            z=str(z)\n",
+    "            influence_x_y_z = []\n",
+    "            influence_x_y_z.append(x)\n",
+    "            influence_x_y_z.append(y)\n",
+    "            influence_x_y_z.append(z)\n",
+    "            influence_location = '_'.join(influence_x_y_z)            \n",
+    "            influence_locations.append(influence_location)\n",
+    "\n",
+    "print(influence_locations)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 87,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "['4_4_0', '4_3_0', '4_2_0', '4_1_0', '3_4_0', '3_3_0', '3_2_0', '3_1_0', '2_4_0', '2_3_0', '2_2_0', '2_1_0', '1_4_0', '1_3_0', '1_2_0']\n"
+     ]
+    }
+   ],
+   "source": [
+    "if temp_location in influence_locations:\n",
+    "    influence_locations.remove(temp_location)\n",
+    "  \n",
+    "\n",
+    "print(influence_locations)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 90,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "['1_2_0', '1_3_0', '2_1_0', '3_1_0', '3_2_0']\n"
+     ]
+    }
+   ],
+   "source": [
+    "# 존재하는 그리드만 남기기\n",
+    "existing_influence_location=[]\n",
+    "\n",
+    "for location in schedule.keys():\n",
+    "    if location in influence_locations:\n",
+    "        existing_influence_location.append(location)\n",
+    "    else:\n",
+    "        continue\n",
+    "\n",
+    "print(existing_influence_location)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### activity in influence locations "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 99,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "['W10020', 'W10020', 'W10020', 'W10020', 'W10020']\n"
+     ]
+    }
+   ],
+   "source": [
+    "acts_in_existing_Influence_location = []\n",
+    "for location in existing_influence_location:\n",
+    "       acts_in_existing_Influence_location.append(schedule[location][day])\n",
+    "\n",
+    "print(acts_in_existing_Influence_location)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### checking activity logic with influence locations"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 102,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#acts_in_existing_Influence_location 내 작업이 schedule[temp_location][day] 작업보다 선행인가 확인\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 74,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>predecessor</th>\n",
+       "      <th>successor</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>A41510</td>\n",
+       "      <td>A44510</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>A41510</td>\n",
+       "      <td>A45510</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>A41510</td>\n",
+       "      <td>A46010</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>A41510</td>\n",
+       "      <td>A47510</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>A41510</td>\n",
+       "      <td>A48510</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "  predecessor successor\n",
+       "0      A41510    A44510\n",
+       "1      A41510    A45510\n",
+       "2      A41510    A46010\n",
+       "3      A41510    A47510\n",
+       "4      A41510    A48510"
+      ]
+     },
+     "execution_count": 74,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "activity_order = pd.read_excel(navipath.activity_order)\n",
+    "activity_order.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def check_order_consistency(self, activity_code1, activity_code2):\n",
+    "    '''\n",
+    "    Attributes\n",
+    "    ----------\n",
+    "    activity_code2 : str\n",
+    "        | An activity code of which order between the current activity is to be checked.\n",
+    "    '''\n",
+    "\n",
+    "    is_predecessor = False\n",
+    "    is_successor = False\n",
+    "\n",
+    "    if activity_code2 in activity_code1.predecessor:\n",
+    "        is_predecessor = True\n",
+    "    else:\n",
+    "        pass\n",
+    "    if activity_code2 in activity_code1.successor:\n",
+    "        is_successor = True\n",
+    "    else:\n",
+    "        pass\n",
+    "\n",
+    "    if all((is_predecessor, is_successor)):\n",
+    "        return 'CONFLICT'\n",
+    "    elif any((is_predecessor, is_successor)):\n",
+    "        return 'FINE'\n",
+    "    else:\n",
+    "        return 'ABSENT'\n",
+    "# def check_activity_order_within_work(local_schedule, activity_code):\n",
+    "global activity_book\n",
+    "\n",
+    "    workday = [day for day in local_schedule.keys() if local_schedule[day] == activity_code][0]\n",
+    "\n",
+    "    conflict_items = []\n",
+    "    for day in range(workday, max(local_schedule.keys())+1, 1):\n",
+    "        try:\n",
+    "            activity_code2 = local_schedule[day]\n",
+    "            activity_1 = activity_book[activity_code]\n",
+    "            activity_2 = activity_book[activity_code2]\n",
+    "        except KeyError:\n",
+    "            continue\n",
+    "        \n",
+    "        if activity_code2 in activity_1.successor:\n",
+    "            order = 'fine'\n",
+    "        elif activity_code2 in activity_1.predecessor:\n",
+    "            order = 'conflict'\n",
+    "        else:\n",
+    "            order = 'irrelevant'\n",
+    "\n",
+    "        if order == 'conflict':\n",
+    "            conflict_items.append((day, activity_code2))\n",
+    "\n",
+    "    return conflict_items\n",
+    "\n",
+    "def reorder_activity(local_schedule, activity_code, conflict_items):\n",
+    "    local_schedule_updated = {}\n",
+    "\n",
+    "    current = [day for day in local_schedule.keys() if local_schedule[day] == activity_code][0]\n",
+    "    move_to = max([day for day, _ in conflict_items])\n",
+    "\n",
+    "    for day in range(0, len(local_schedule), 1):\n",
+    "        if day < current or day > move_to:\n",
+    "            local_schedule_updated[day] = local_schedule[day]\n",
+    "        elif day == current:\n",
+    "            local_schedule_updated[move_to] = local_schedule[day]\n",
+    "        else:\n",
+    "            local_schedule_updated[day-1] = local_schedule[day]\n",
+    "\n",
+    "    return {d: a for d, a in sorted(local_schedule_updated.items(), key=lambda x:x[0])}\n",
+    "\n",
+    "def update_order_in_local_schedule(local_schedule, verbose=False):\n",
+    "    for day, activity_code in sorted(local_schedule.items(), key=lambda x:x[0]):\n",
+    "        conflict_items = check_activity_order_within_work(local_schedule, activity_code)\n",
+    "        \n",
+    "        if verbose:\n",
+    "            print('{:2}: {}'.format(day, activity_code))\n",
+    "        else:\n",
+    "            pass\n",
+    "\n",
+    "        if conflict_items:\n",
+    "            for conflicted_day, conflicted_activity_code in conflict_items:\n",
+    "                print('  | Conflicts at {}({}) <-> {}({})'.format(activity_code, day, conflicted_activity_code, conflicted_day))\n",
+    "\n",
+    "            local_schedule_updated = deepcopy(reorder_activity(local_schedule, activity_code, conflict_items))\n",
+    "            return local_schedule_updated\n",
+    "        else:\n",
+    "            continue\n",
+    "\n",
+    "    return local_schedule\n",
+    "\n",
+    "def update_order(schedule, verbose_iter=False, verbose_local=False):\n",
+    "    schedule_updated = defaultdict(dict)\n",
+    "\n",
+    "    iteration = 0\n",
+    "    for location in schedule.keys():\n",
+    "        local_schedule_original = deepcopy(schedule[location])\n",
+    "        while True:\n",
+    "            iteration += 1\n",
+    "\n",
+    "            if verbose_iter:\n",
+    "                print('============================================================')\n",
+    "                print('Iteration: {:03,d} ({})'.format(iteration, location))\n",
+    "            else:\n",
+    "                pass\n",
+    "\n",
+    "            local_schedule_updated = deepcopy(update_order_in_local_schedule(local_schedule=local_schedule_original, verbose=verbose_local))\n",
+    "            if navifunc.compare_local_schedule(local_schedule_original, local_schedule_updated) == 'same':\n",
+    "                schedule_updated[location] = deepcopy(local_schedule_updated)\n",
+    "                break\n",
+    "            else:\n",
+    "                local_schedule_original = deepcopy(local_schedule_updated)\n",
+    "\n",
+    "    return schedule_updated\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [
+    {
+     "ename": "IndentationError",
+     "evalue": "unexpected indent (<ipython-input-1-d495bb0d3fc1>, line 4)",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[1;36m  File \u001b[1;32m\"<ipython-input-1-d495bb0d3fc1>\"\u001b[1;36m, line \u001b[1;32m4\u001b[0m\n\u001b[1;33m    workday = [day for day in local_schedule.keys() if local_schedule[day] == activity_code][0]\u001b[0m\n\u001b[1;37m    ^\u001b[0m\n\u001b[1;31mIndentationError\u001b[0m\u001b[1;31m:\u001b[0m unexpected indent\n"
+     ]
+    }
+   ],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "\n",
+    "\n",
+    "# def set_orders_in_activity_book():\n",
+    "#     global fname_activity_book\n",
+    "\n",
+    "#     with open(os.path.sep.join((navipath.fdir_component, fname_activity_book)), 'rb') as f:\n",
+    "#         activity_book = pk.load(f)\n",
+    "\n",
+    "#     activity_order = pd.read_excel(navipath.activity_order)\n",
+    "#     key_errors = []\n",
+    "#     for _, line in activity_order.iterrows():\n",
+    "#         predecessor_code = line['predecessor']\n",
+    "#         successor_code = line['successor']\n",
+    "\n",
+    "#         try:\n",
+    "#             predecessor_activity = deepcopy(activity_book[predecessor_code])\n",
+    "#         except KeyError:\n",
+    "#             key_errors.append(predecessor_code)\n",
+    "#             continue\n",
+    "#         try:\n",
+    "#             successor_activity = deepcopy(activity_book[successor_code])\n",
+    "#         except KeyError:\n",
+    "#             key_errors.append(successor_code)\n",
+    "#             continue\n",
+    "\n",
+    "#         predecessor_activity.add_successor(successor_activity.code)\n",
+    "#         successor_activity.add_predecessor(predecessor_activity.code)\n",
+    "\n",
+    "#         activity_book[predecessor_code] = predecessor_activity\n",
+    "#         activity_book[successor_code] = successor_activity\n",
+    "\n",
+    "#     updates = [True]\n",
+    "#     while any(updates) == True:\n",
+    "#         updates = []\n",
+    "#         for activity_code in activity_book:\n",
+    "#             activity = activity_book[activity_code]\n",
+    "\n",
+    "#             existing_preds = deepcopy(list(set(activity.predecessor)))\n",
+    "#             for pred_code in activity.predecessor:\n",
+    "#                 pred_of_pred = list(set(activity_book[pred_code].predecessor))\n",
+    "#                 updated_preds = deepcopy(list(set(existing_preds+pred_of_pred)))\n",
+    "#                 if set(updated_preds) != set(existing_preds):\n",
+    "#                     activity_book[activity_code].predecessor = updated_preds\n",
+    "#                     updates.append(True)\n",
+    "            \n",
+    "#             existing_succs = deepcopy(list(set(activity.successor)))\n",
+    "#             for succ_code in activity.successor:\n",
+    "#                 succ_of_succ = list(set(activity_book[succ_code].successor))\n",
+    "#                 updated_succs = deepcopy(list(set(existing_succs+succ_of_succ)))\n",
+    "#                 if set(updated_succs) != set(existing_succs):\n",
+    "#                     activity_book[activity_code].successor = updated_succs\n",
+    "#                     updates.append(True)\n",
+    "\n",
+    "#     with open(os.path.sep.join((navipath.fdir_component, fname_activity_book)), 'wb') as f:\n",
+    "#         pk.dump(activity_book, f)\n",
+    "\n",
+    "#     print('============================================================')\n",
+    "#     print('Set order information to ActivityBook')\n",
+    "#     print('  | fdir : {}'.format(navipath.fdir_component))\n",
+    "#     print('  | fname: {}'.format(fname_activity_book))\n",
+    "\n",
+    "#     if key_errors:\n",
+    "#         print('Errors on ActivityOrder template')\n",
+    "#         key_errors = list(set(key_errors))\n",
+    "#         for activity_code in key_errors:\n",
+    "#             print('  | Absent in ActivityBook: {}'.format(activity_code))\n",
+    "#     else:\n",
+    "#         pass\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#제 제약조건상에 오류를 발견했어요....\n",
+    "#골조 Workpackage(우리 파일에 Major Actiity)에 세부 작업 먹놓기.... 타설, 양생까지 작업이 있다면\n",
+    "#하부층의 양생이 완료된 후에 상부층 먹놓기가 가능하니까,,, 그냥 선후 작업만 확인해서는 안되네요\n",
+    "#동일층에서는 먹놓기 생산성 만큼 마무리 되면 다른 구역의 먹놓기 작업이 진행가능....\n",
+    "#제약조건이 추가되어야 하네요....\n",
+    "#머리가 좀 아프므로, 레벨의 변화 없이 동일 레벨에서 작업하는거로 데이타 파일을 다시 구성해야겠습니다. \n",
+    "#1층 골조와 2....층 골조 Code를 다르게해서 선후 조건을 걸어야겠어요.... 고민....\n",
+    "\n",
+    "#그리고 대세에 영향이 없을 수 있으므로 \n",
+    "#동일층 내에서 공정계획 자동화하는거에 집중하고\n",
+    "#추가로 생산성 고려할때 가까운 location을 우선배정하는거 까지만 제약 추가하고\n",
+    "#시각화 좀 고민하고\n",
+    "#논문작성에 집중해볼까합니다.\n",
+    "#그래도 희망이 보이네요^^ 감사해요\n"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}
