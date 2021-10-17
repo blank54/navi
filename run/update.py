@@ -63,7 +63,7 @@ def normallize_duplicated_activity(schedule):
 
 ## Activity Order Constraint
 def check_activity_order_within_work(local_schedule, activity_code):
-    global activit_book
+    global activity_book
 
     workday = [day for day in local_schedule.keys() if local_schedule[day] == activity_code][0]
 
@@ -248,7 +248,7 @@ def update(schedule_original, save_log=True):
         times.append((iteration, running_time))
         print(' ({:.03f} sec)'.format(running_time), end='')
 
-    print('\n  | Running time: {:,d} sec'.format(sum([t for _, t in times])))
+    print('\n  | Running time: {} sec'.format(sum([t for _, t in times])))
     return schedule_updated
 
 
@@ -256,7 +256,7 @@ if __name__ == '__main__':
     ## Load project
     activity_book = naviio.import_activity_book()
 
-    case_num = '001'
+    case_num = '003'
     schedule = import_schedule(case_num)
     schedule_normalized = normallize_duplicated_activity(schedule)
 
