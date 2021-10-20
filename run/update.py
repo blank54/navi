@@ -167,7 +167,7 @@ def check_productivity_overload(activity_code, count):
     except KeyError:
         return 'fine'
 
-def push_workdays_uniformly(schedule, target_location, after):
+def push_workdays_single_location(schedule, target_location, after):
     schedule_updated = defaultdict(dict)
     for location in schedule:
         if location != target_location:
@@ -200,7 +200,7 @@ def activity_productivity_constraint(schedule, daily_work_plan):
                         continue
 
                 for target_location in target_location_list[:num_overloaded]:
-                    schedule_updated = deepcopy(push_workdays_uniformly(schedule=schedule, target_location=target_location, after=day))
+                    schedule_updated = deepcopy(push_workdays_single_location(schedule=schedule, target_location=target_location, after=day))
             else:
                 continue
 
@@ -215,7 +215,7 @@ def update(schedule_original, save_log=True):
     times = []
     iteration = 0
     while True:
-        print('\r  | Iteration: {:03,d}'.format(iteration), end='')
+        print('\r  | Iteration: {:,d}'.format(iteration), end='')
         start_time = time()
         
         ## Work Plans
@@ -238,8 +238,8 @@ def update(schedule_original, save_log=True):
             iteration += 1
 
         if save_log:
-            naviio.schedule2xlsx(schedule_updated_order, fname='C-{}/I-{:03,d}_01-order.xlsx'.format(case_num, iteration), verbose=False)
-            naviio.schedule2xlsx(schedule_updated_productivity, fname='C-{}/I-{:03,d}_02-productivity.xlsx'.format(case_num, iteration), verbose=False)
+            naviio.schedule2xlsx(schedule_updated_order, fname='C-{}/I-{:04,d}_01-order.xlsx'.format(case_num, iteration), verbose=False)
+            naviio.schedule2xlsx(schedule_updated_productivity, fname='C-{}/I-{:04,d}_02-productivity.xlsx'.format(case_num, iteration), verbose=False)
         else:
             pass
 
