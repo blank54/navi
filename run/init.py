@@ -28,6 +28,8 @@ def init_activity_book():
     global fname_activity_book
 
     activity_table = pd.read_excel(navipath.activity_table)
+    acti
+
     activity_book = {}
     for _, line in activity_table.iterrows():
         category = line['category']
@@ -35,6 +37,7 @@ def init_activity_book():
         minor = line['minor_activity']
         code = line['code']
         productivity = line['productivity']
+        pre_dist = line['pre_dist']
 
         parameters = {
             'category': category,
@@ -42,6 +45,7 @@ def init_activity_book():
             'minor': minor,
             'code': code,
             'productivity': productivity,
+            'pre_dist': pre_dist,
         }
         activity_book[code] = Activity(parameters=parameters)
 
@@ -163,7 +167,7 @@ def initiate_project(case_num, duration):
     print('  | fdir : {}'.format(navipath.fdir_proj))
     print('  | fname: {}'.format(os.path.basename(navipath.proj(case_num))))
 
-def initial_schedule(case_num):
+def export_initial_schedule(case_num):
     with open(navipath.proj(case_num), 'rb') as f:
         project = pk.load(f)
 
@@ -186,4 +190,4 @@ if __name__ == '__main__':
     initiate_project(case_num, duration)
 
     ## Schedule
-    initial_schedule(case_num)
+    export_initial_schedule(case_num)
