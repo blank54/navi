@@ -266,8 +266,8 @@ class NaviFunc:
         return 'same'
 
     def euclidean_distance(self, x, y):
-        x_arr = np.array(x)
-        y_arr = np.array(y)
+        x_arr = np.array(x, dtype='i1')
+        y_arr = np.array(y, dtype='i1')
         dist = np.linalg.norm(y_arr-x_arr)
         return dist
 
