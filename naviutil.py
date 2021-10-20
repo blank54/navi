@@ -224,10 +224,10 @@ class NaviFunc:
         return sorted(local_schedule.items(), key=lambda x:x[1], reverse=False)
 
     def build_daily_work_plan(self, schedule):
-        daily_work_plan = defaultdict(list)
+        daily_work_plan = defaultdict(dict)
         for location in schedule:
             for day, activity_code in schedule[location].items():
-                daily_work_plan[day].append(activity_code)
+                daily_work_plan[day][location] = activity_code
 
         return daily_work_plan
 
