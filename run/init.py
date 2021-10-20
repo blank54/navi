@@ -28,7 +28,6 @@ def init_activity_book():
     global fname_activity_book
 
     activity_table = pd.read_excel(navipath.activity_table)
-    acti
 
     activity_book = {}
     for _, line in activity_table.iterrows():
