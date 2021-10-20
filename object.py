@@ -37,6 +37,8 @@ class Activity:
         | A list of activity codes that should be done before the current activity.
     successor : list
         | A list of activity codes that should be done after the current activity.
+    pre_dist : int
+        | The minimum distance by which the predecessor activities should be completed to start the current activity.
 
     Methods
     -------
@@ -56,6 +58,7 @@ class Activity:
         self.minor = parameters.get('minor', 'NA')
         
         self.productivity = parameters.get('productivity', 'NA')
+        self.pre_dist = parameters.get('pre_dist', 'NA')
 
         self.predecessor = []
         self.successor = []
