@@ -1,6 +1,7 @@
 #최흥순 부장님
 - pre_dist의 정의 구체화 (object.py)
 - activity_pre_dist.xlsx --> activity_table.xlsx에 병합(현재는 임의로 넣어둠)
+- case.xlsx 데이터 확장. 현재는 3x3 정도의 현장을 가정하다 보니, pre_dist 제약조건이 거의 모든 경우에 해당됨.
 
 #문성현
-- test/pre_dist.py --> run/update.py
+- schedule_updated 시각화 결과의 동영상 촬영
