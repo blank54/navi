@@ -5,7 +5,6 @@
 # Configuration
 import os
 import sys
-
 rootpath = os.path.sep.join(os.path.dirname(os.path.abspath(__file__)).split(os.path.sep)[:-1])
 sys.path.append(rootpath)
 
@@ -238,9 +237,10 @@ def check_productivity_overload(activity_code, count):
     except KeyError:
         return 'fine'
 
-def activity_productivity_constraint(schedule, daily_work_plan):
+def activity_productivity_constraint(schedule):
     global activity_book
 
+    daily_work_plan = navifunc.build_daily_work_plan(schedule)
     schedule_updated = defaultdict(dict)
     for day, works in sorted(daily_work_plan.items(), key=lambda x:x[0], reverse=False):
         activity_counter = Counter(works)
@@ -267,17 +267,50 @@ def activity_productivity_constraint(schedule, daily_work_plan):
         return schedule
 
 
+## Compress schedule
+def compress_schedule(schedule):
+    daily_work_plan = navifunc.build_daily_work_plan(schedule)
+    schedule_updated = defaultdict(dict)
+
+    target_day = []
+    for day, works in sorted(daily_work_plan.items(), key=lambda x:x[0], reverse=False):
+        activity_list = []
+        for location, activity_code in works.items():
+            if activity_code == '------':
+                continue
+            else:
+                activity_list.append(activity_code)
+
+        if activity_list:
+            continue
+        else:
+            target_day = list(set(target_day))
+
+    if not target_day:
+        return schedule
+    else:
+        compressed_days = 0
+        for location in schedule:
+            for day, activity_code in schedule[location].items():
+                if day in target_day:
+                    compressed_days += 1
+                    continue
+                else:
+                    schedule_updated[location][day-compressed_days] = activity_code
+        
+        return schedule_updated
+
+
 ## Update schedule
-def update(schedule_original, save_log=True):
+def update(schedule_original, save_log):
     times = []
     iteration = 0
+    running_time = 0
+
     while True:
         print('\r  | Iteration: {:,d}'.format(iteration), end='')
         start_time = time()
         
-        ## Work Plans
-        daily_work_plan = navifunc.build_daily_work_plan(schedule_original)
-
         ## Activity Order Constraint
         schedule_updated_order = deepcopy(activity_order_constraint(schedule_original, verbose_iter=False, verbose_local=False, verbose_conflict=False))
 
@@ -285,9 +318,12 @@ def update(schedule_original, save_log=True):
         schedule_updated_pre_dist = deepcopy(activity_predecessor_completion_constraint(schedule_updated_order))
 
         ## Activity Productivity Constraint
-        schedule_updated_productivity = deepcopy(activity_productivity_constraint(schedule_updated_pre_dist, daily_work_plan))
+        schedule_updated_productivity = deepcopy(activity_productivity_constraint(schedule_updated_pre_dist))
 
-        schedule_updated = deepcopy(schedule_updated_productivity)
+        ## Compress empty workday
+        schedule_updated_compressed = deepcopy(compress_schedule(schedule_updated_productivity))
+
+        schedule_updated = deepcopy(schedule_updated_compressed)
         if navifunc.compare_schedule(schedule_original, schedule_updated) == 'same':
             break
         else:
@@ -298,13 +334,16 @@ def update(schedule_original, save_log=True):
             naviio.schedule2xlsx(schedule_updated_order, fname='C-{}/I-{:04,d}_01-order.xlsx'.format(case_num, iteration), verbose=False)
             naviio.schedule2xlsx(schedule_updated_pre_dist, fname='C-{}/I-{:04,d}_02-pre_dist.xlsx'.format(case_num, iteration), verbose=False)
             naviio.schedule2xlsx(schedule_updated_productivity, fname='C-{}/I-{:04,d}_03-productivity.xlsx'.format(case_num, iteration), verbose=False)
+            naviio.schedule2xlsx(schedule_updated_compressed, fname='C-{}/I-{:04,d}_04-compressed.xlsx'.format(case_num, iteration), verbose=False)
         else:
             pass
 
         end_time = time()
-        running_time = end_time - start_time
-        times.append((iteration, running_time))
-        print(' ({:.03f} sec/iter)'.format(running_time), end='')
+        iteration_time = end_time - start_time
+        running_time += iteration_time
+        times.append((iteration, iteration_time))
+        print(' ({:.03f} sec/iter)'.format(iteration_time), end='')
+        print(' (running: {:,d} sec)'.format(int(running_time)), end='')
 
     print('\n  | Running time: {:.03f} sec'.format(sum([t for _, t in times])))
     return schedule_updated
@@ -326,7 +365,13 @@ if __name__ == '__main__':
     ## Update schedule
     print('============================================================')
     print('Update schedule')
-    schedule_updated = update(schedule_normalized, save_log=True)
+    schedule_updated = update(schedule_normalized, save_log=False)
+
+    ## Export schedule
+    try:
+        naviio.schedule2xlsx(schedule=schedule_updated, fname='C-{}/updated.xlsx'.format(case_num))
+    except:
+        pass
 
     ## Print schedule
     navifunc.print_schedule(schedule=schedule_updated)
