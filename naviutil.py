@@ -243,8 +243,8 @@ class NaviFunc:
             else:
                 pass
 
-            for activity_code, day in schedule_1[location].items():
-                if day != schedule_2[location][activity_code]:
+            for day, activity_code_1 in schedule_1[location].items():
+                if activity_code_1 != schedule_2[location][day]:
                     return 'different'
                 else:
                     continue
