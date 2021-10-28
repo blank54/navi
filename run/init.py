@@ -177,8 +177,18 @@ def export_initial_schedule(case_num):
 if __name__ == '__main__':
     ## Project Constraints
     fname_activity_book = 'activity_book.pk'
-    case_num = '003'
-    duration = 15
+
+    try:
+        case_num = str(sys.argv[1])
+    except:
+        print('Insert project case number: ')
+        sys.exit()
+
+    try:
+        duration = int(sys.argv[2])
+    except:
+        print('Insert project duration (total days): ')
+        sys.exit()
 
     ## Activity Book
     init_activity_book()

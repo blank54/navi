@@ -6,8 +6,6 @@
 import os
 import sys
 
-#__file__ = os.getcwd()
-
 rootpath = os.path.sep.join(os.path.dirname(os.path.abspath(__file__)).split(os.path.sep)[:-1])
 sys.path.append(rootpath)
 
@@ -316,7 +314,12 @@ if __name__ == '__main__':
     ## Load project
     activity_book = naviio.import_activity_book()
 
-    case_num = '003'
+    try:
+        case_num = str(sys.argv[1])
+    except:
+        print('Insert project case number: ')
+        sys.exit()
+
     schedule = import_schedule(case_num)
     schedule_normalized = normallize_duplicated_activity(schedule)
 
