@@ -205,6 +205,8 @@ def check_pre_dist(schedule, location, day, activity_code):
             existing_activity_code = schedule[influenced_location][day]
             if existing_activity_code == '------':
                 continue
+            elif existing_activity_code == activity_code:
+                continue
             else:
                 existing_activity_codes.append(existing_activity_code)
         except KeyError:
