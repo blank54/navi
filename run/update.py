@@ -181,7 +181,7 @@ def find_influence_locations(location_list, current_location, activity_code):
                 if comparing_location == current_location:
                     continue
                 else:
-                    distance = navifunc.euclidean_distance(current_location.split('_'), comparing_location.split('_'))
+                    distance = navifunc.euclidean_distance(current_location.split('_')[:2], comparing_location.split('_')[:2])
                     if distance <= pre_dist:
                         influenced_locations.append(comparing_location)
     except KeyError:
