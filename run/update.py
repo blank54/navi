@@ -23,20 +23,20 @@ from collections import defaultdict, Counter
 
 
 ## Data Import
-def import_schedule(case_num):
+def import_schedule(case_id):
     global activity_book
 
     try:
-        fname_initial_schedule = 'C-{}.xlsx'.format(case_num)
+        fname_initial_schedule = 'C-{}.xlsx'.format(case_id)
         schedule = naviio.xlsx2schedule(activity_book=activity_book, fname=fname_initial_schedule)
         return schedule
     except FileNotFoundError:
-        print('Error: You should run "init.py" first to build "C-{}.xlsx"'.format(case_num))
+        print('Error: You should run "init.py" first to build "C-{}.xlsx"'.format(case_id))
         sys.exit(1)
 
 ## Duplicated Activity Normalization
 def normallize_duplicated_activity(schedule):
-    global case_num
+    global case_id
 
     schedule_normalized = defaultdict(dict)
     for location in schedule:
@@ -50,7 +50,7 @@ def normallize_duplicated_activity(schedule):
             else:
                 continue
 
-    fname = 'C-{}/normalized.xlsx'.format(case_num)
+    fname = 'C-{}/normalized.xlsx'.format(case_id)
     fdir = os.path.sep.join((navipath.fdir_schedule, os.path.dirname(fname)))
     if os.path.exists(fdir):
         shutil.rmtree(fdir)
@@ -72,6 +72,7 @@ def push_workdays_single_location(schedule, target_location, after):
                     schedule_updated[location][day] = activity_code
             schedule_updated[location][after] = '------'
     return schedule_updated
+
 
 ## Activity Order Constraint
 def check_activity_order_within_work(local_schedule, activity_code):
@@ -139,7 +140,7 @@ def update_order_in_local_schedule(local_schedule, verbose_local=False, verbose_
 
     return local_schedule
 
-def activity_order_constraint(schedule, verbose_iter=False, verbose_local=False, verbose_conflict=False):
+def activity_order_constraint(schedule, verbose_local=False, verbose_conflict=False):
     schedule_updated = deepcopy(schedule)
 
     iteration = 0
@@ -148,13 +149,6 @@ def activity_order_constraint(schedule, verbose_iter=False, verbose_local=False,
 
         while True:
             iteration += 1
-
-            if verbose_iter:
-                print('============================================================')
-                print('Iteration: {:03,d} ({})'.format(iteration, location))
-            else:
-                pass
-
             local_schedule_updated = deepcopy(update_order_in_local_schedule(local_schedule=local_schedule_original, verbose_local=verbose_local, verbose_conflict=verbose_conflict))
             if navifunc.compare_local_schedule(local_schedule_original, local_schedule_updated) == 'same':
                 schedule_updated[location] = deepcopy(local_schedule_updated)
@@ -229,44 +223,28 @@ def activity_predecessor_completion_constraint(schedule):
 
     return schedule
 
-## Activity Productivity Constraint
-def check_productivity_overload(activity_code, count):
-    try:
-        if count > activity_book[activity_code].productivity:
-            return 'overloaded'
-        else:
-            return 'fine'
-    except KeyError:
-        return 'fine'
 
+## Activity Productivity Constraint
 def activity_productivity_constraint(schedule):
     global activity_book
 
     daily_work_plan = navifunc.build_daily_work_plan(schedule)
-    schedule_updated = defaultdict(dict)
-    for day, works in sorted(daily_work_plan.items(), key=lambda x:x[0], reverse=False):
-        activity_counter = Counter(works)
-        for activity_code, count in activity_counter.items():
-            if check_productivity_overload(activity_code, count) == 'overloaded':
+    schedule_updated = deepcopy(schedule)
+    for day in sorted(daily_work_plan.keys(), reverse=False):
+        activity_counter = defaultdict(list)
+        for location, activity_code in daily_work_plan[day].items():
+            activity_counter[activity_code].append(location)
+
+        for activity_code, location_list in activity_counter.items():
+            count = len(location_list)
+            if navifunc.check_productivity_overload(activity_book, activity_code, count) == 'overloaded':
                 num_overloaded = (count-activity_book[activity_code].productivity)
-
-                target_location_list = []
-                for location in schedule.keys():
-                    try:
-                        if schedule[location][day] == activity_code:
-                            target_location_list.append(location)
-                    except KeyError:
-                        continue
-
-                for target_location in target_location_list[:num_overloaded]:
-                    schedule_updated = deepcopy(push_workdays_single_location(schedule=schedule, target_location=target_location, after=day))
+                for target_location in location_list[:num_overloaded]:
+                    schedule_updated = deepcopy(push_workdays_single_location(schedule=schedule_updated, target_location=target_location, after=day))
             else:
-                continue
+                pass
 
-    if schedule_updated:
-        return schedule_updated
-    else:
-        return schedule
+    return schedule_updated
 
 
 ## Compress schedule
@@ -304,50 +282,72 @@ def compress_schedule(schedule):
 
 
 ## Update schedule
-def update(schedule_original, save_log):
+def update(schedule_original, do_order, do_pre_dist, do_productivity, do_compress, save_log):
+    global case_id
+
     times = []
     iteration = 0
     running_time = 0
+    schedule_updated = deepcopy(schedule_original)
 
     while True:
         print('\r  | Iteration: {:,d}'.format(iteration), end='')
         start_time = time()
+        schedule_before = deepcopy(schedule_updated)
         
         ## Activity Order Constraint
-        schedule_updated_order = deepcopy(activity_order_constraint(schedule_original, verbose_iter=False, verbose_local=False, verbose_conflict=False))
-
-        ## Activity Predecessor Completion Constraint
-        schedule_updated_pre_dist = deepcopy(activity_predecessor_completion_constraint(schedule_updated_order))
-
-        ## Activity Productivity Constraint
-        schedule_updated_productivity = deepcopy(activity_productivity_constraint(schedule_updated_pre_dist))
-
-        ## Compress empty workday
-        schedule_updated_compressed = deepcopy(compress_schedule(schedule_updated_productivity))
-
-        schedule_updated = deepcopy(schedule_updated_compressed)
-        if navifunc.compare_schedule(schedule_original, schedule_updated) == 'same':
-            break
-        else:
-            schedule_original = deepcopy(schedule_updated)
-            iteration += 1
-
-        if save_log:
-            naviio.schedule2xlsx(schedule_updated_order, fname='C-{}/I-{:04,d}_01-order.xlsx'.format(case_num, iteration), verbose=False)
-            naviio.schedule2xlsx(schedule_updated_pre_dist, fname='C-{}/I-{:04,d}_02-pre_dist.xlsx'.format(case_num, iteration), verbose=False)
-            naviio.schedule2xlsx(schedule_updated_productivity, fname='C-{}/I-{:04,d}_03-productivity.xlsx'.format(case_num, iteration), verbose=False)
-            naviio.schedule2xlsx(schedule_updated_compressed, fname='C-{}/I-{:04,d}_04-compressed.xlsx'.format(case_num, iteration), verbose=False)
+        if do_order:
+            schedule_updated = deepcopy(activity_order_constraint(schedule_updated, verbose_local=False, verbose_conflict=False))
+            if save_log:
+                naviio.schedule2xlsx(schedule_updated, fname='C-{}/I-{:04d}_01-order.xlsx'.format(case_id, iteration), verbose=False)
+            else:
+                pass
         else:
             pass
 
-        end_time = time()
-        iteration_time = end_time - start_time
-        running_time += iteration_time
-        times.append((iteration, iteration_time))
-        print(' ({:.03f} sec/iter)'.format(iteration_time), end='')
-        print(' (running: {:,d} sec)'.format(int(running_time)), end='')
+        ## Activity Predecessor Completion Constraint
+        if do_pre_dist:
+            schedule_updated = deepcopy(activity_predecessor_completion_constraint(schedule_updated))
+            if save_log:
+                naviio.schedule2xlsx(schedule_updated, fname='C-{}/I-{:04d}_02-pre_dist.xlsx'.format(case_id, iteration), verbose=False)
+            else:
+                pass
+        else:
+            pass
 
-    print('\n  | Running time: {:.03f} sec'.format(sum([t for _, t in times])))
+        ## Activity Productivity Constraint
+        if do_productivity:
+            schedule_updated = deepcopy(activity_productivity_constraint(schedule_updated))
+            if save_log:
+                naviio.schedule2xlsx(schedule_updated, fname='C-{}/I-{:04d}_03-productivity.xlsx'.format(case_id, iteration), verbose=False)
+            else:
+                pass
+        else:
+            pass
+
+        ## Compress empty workday
+        if do_compress:
+            schedule_updated = deepcopy(compress_schedule(schedule_updated))
+            if save_log:
+                naviio.schedule2xlsx(schedule_updated, fname='C-{}/I-{:04d}_04-compressed.xlsx'.format(case_id, iteration), verbose=False)
+            else:
+                pass
+        else:
+            pass
+
+        schedule_after = deepcopy(schedule_updated)
+        if navifunc.compare_schedule(schedule_before, schedule_after) == 'same':
+            break
+        else:
+            iteration += 1
+            end_time = time()
+            iteration_time = end_time - start_time
+            running_time += iteration_time
+            times.append((iteration, iteration_time))
+            print(' (Running time: {:.03f} sec/iter & {:,d} sec/total)'.format(iteration_time, int(running_time)), end='')
+            continue
+
+    print('\n  | Total running time: {:.03f} sec'.format(sum([t for _, t in times])))
     return schedule_updated
 
 
@@ -356,24 +356,29 @@ if __name__ == '__main__':
     activity_book = naviio.import_activity_book()
 
     try:
-        case_num = str(sys.argv[1])
+        case_id = str(sys.argv[1])
     except:
         print('Insert project case number: ')
         sys.exit()
 
-    schedule = import_schedule(case_num)
+    schedule = import_schedule(case_id)
     schedule_normalized = normallize_duplicated_activity(schedule)
 
     ## Update schedule
     print('============================================================')
     print('Update schedule')
-    schedule_updated = update(schedule_normalized, save_log=False)
+    schedule_updated = update(schedule_original=schedule_normalized, 
+                              do_order=True, 
+                              do_pre_dist=True, 
+                              do_productivity=True, 
+                              do_compress=False, 
+                              save_log=True)
 
     ## Export schedule
     try:
-        naviio.schedule2xlsx(schedule=schedule_updated, fname='C-{}/updated.xlsx'.format(case_num))
+        naviio.schedule2xlsx(schedule=schedule_updated, fname='C-{}/updated.xlsx'.format(case_id))
     except:
         pass
 
     ## Print schedule
-    navifunc.print_schedule(schedule=schedule_updated)
+    # navifunc.print_schedule(schedule=schedule_updated)
