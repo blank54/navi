@@ -201,6 +201,15 @@ class NaviFunc:
         else:
             return 'ABSENT'
 
+    def check_productivity_overload(self, activity_book, activity_code, count):
+        try:
+            if count > activity_book[activity_code].productivity:
+                return 'overloaded'
+            else:
+                return 'fine'
+        except KeyError:
+            return 'fine'
+
     def grids2schedule(self, grids):
         '''
         Set an initial schedule of the project.

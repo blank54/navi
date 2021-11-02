@@ -7,9 +7,10 @@ import sys
 rootpath = os.path.sep.join(os.path.dirname(os.path.abspath(__file__)).split(os.path.sep)[:-1])
 sys.path.append(rootpath)
 
-from naviutil import NaviPath, NaviFunc
+from naviutil import NaviPath, NaviFunc, NaviIO
 navipath = NaviPath()
 navifunc = NaviFunc()
+naviio = NaviIO()
 
 from copy import deepcopy
 import pickle as pk
@@ -19,7 +20,7 @@ from collections import defaultdict
 def import_schedule(fname):
     global activity_book
 
-    schedule = navifunc.xlsx2schedule(activity_book=activity_book, fname=fname)
+    schedule = naviio.xlsx2schedule(activity_book=activity_book, fname=fname)
     normalized_schedule = normallize_duplicated_activity(schedule)
     return normalized_schedule
 
@@ -128,10 +129,12 @@ def update_order(schedule, verbose_iter=False, verbose_local=False):
 
 if __name__ == '__main__':
     fname_activity_book = 'activity_book.pk'
-    with open(os.path.sep.join(navipath.fdir_component, fname_activity_book), 'rb') as f:
+    with open(os.path.sep.join((navipath.fdir_component, fname_activity_book)), 'rb') as f:
         activity_book = pk.load(f)
 
     case_num = '01'
-    fname_schedule_original = os.path.sep.join(navipath.fdir_schedule, 'C-{}.xlsx'.format(case_num))
+    fname_schedule_original = 'C-{}.xlsx'.format(case_num)
     schedule_original = import_schedule(fname=fname_schedule_original)
-    schedule_updated = update_order(schedule=schedule_original, verbose_iter=True, verbose_local=False)
+    # schedule_updated = update_order(schedule=schedule_original, verbose_iter=True, verbose_local=False)
+
+    print(activity_book['D11010'].productivity)
