@@ -171,20 +171,81 @@ def find_influence_locations(location_list, current_location, activity_code):
         if pre_dist == 'NA':
             return []
         else:
-            for comparing_location in schedule:
-                if comparing_location == current_location:
-                    continue
-                else:
+            # for comparing_location in schedule:
+            #     if comparing_location == current_location:
+            #         continue
+            #     else:
+            #         for location in current_location:
+            x, y, z = current_location.split("_")
+            pre_dist1 = pre_dist
+            pre_dist2 = pre_dist
+            pre_dist_z1 = 1
+            pre_dist_z2 = int(-1)
+            x = int(x)
+            y = int(y)
+            z = int(z)
+            pre_dist_location_x_list = []
+            pre_dist_location_y_list = []
+            pre_dist_location_z_list = [z]
+            while pre_dist1 > 0:
+                pred_dist_x1 = x + pre_dist1
+                pre_dist_location_x_list.append(pred_dist_x1)
+                pred_dist_y1 = y + pre_dist1
+                pre_dist_location_y_list.append(pred_dist_y1)
+                pre_dist1 = pre_dist1 - 1
+
+            while pre_dist2 >= 0:
+                pred_dist_x2 = x - pre_dist2
+                pred_dist_y2 = y - pre_dist2
+                if pred_dist_x2 > 0:
+                    pre_dist_location_x_list.append(pred_dist_x2)
+                if pred_dist_y2 > 0:
+                    pre_dist_location_y_list.append(pred_dist_y2)
+                pre_dist2 = pre_dist2 - 1
+
+            # if 'D' in check_pre_dist_act:
+            #     pred_dist_z = z + pre_dist_z1
+            #     pre_dist_location_z_list.append(pred_dist_z)
+            # elif 'S' in check_pre_dist_act:
+            #     pred_dist_z = z + pre_dist_z2
+            #     pre_dist_location_z_list.append(pred_dist_z)
+
+        # making influence grid
+        # 특정 작업의 영향거리 내 Location만들기1
+
+        a_influence_locations = []
+        for x in pre_dist_location_x_list:
+            x = str(x)
+            for y in pre_dist_location_y_list:
+                y = str(y)
+                for z in pre_dist_location_z_list:
+                    z = str(z)
+                    influence_x_y_z = []
+                    influence_x_y_z.append(x)
+                    influence_x_y_z.append(y)
+                    influence_x_y_z.append(z)
+                    influence_location = '_'.join(influence_x_y_z)
+                    a_influence_locations.append(influence_location)
+
+        # 자신의 그리드 제거
+        if current_location in a_influence_locations:
+            a_influence_locations.remove(current_location)
+
+        # 존재하는 그리드만 남기기
+        # influenced_locations = []
+        for location in schedule.keys():
+            if location in a_influence_locations:
+                influenced_locations.append(location)
+            else:
+                continue
+
+        ## 거리 계산하는 코드는 여기에 작성하시면 됩니다.
+        # distance = navifunc.euclidean_distance(current_location.split('_')[:2], comparing_location.split('_')[:2])
+        ##
 
 
-
-                    ## 거리 계산하는 코드는 여기에 작성하시면 됩니다.
-                    distance = navifunc.euclidean_distance(current_location.split('_')[:2], comparing_location.split('_')[:2])
-                    ##
-
-
-                    if distance <= pre_dist:
-                        influenced_locations.append(comparing_location)
+        # if distance <= pre_dist:
+        #     influenced_locations.append(comparing_location)
     except KeyError:
         pass
 
@@ -247,7 +308,6 @@ def activity_predecessor_completion_constraint(schedule):
                 pass
             else:
                 for target_location in target_locations:
-
 
                     ## 스케줄을 변경하는 코드입니다.
                     ## 변경하려는 스케줄(schedule_updated), 변경하려는 위치(target_location), 언제 이후로 변경할 것인지(after)를 설정하면
@@ -406,7 +466,7 @@ if __name__ == '__main__':
     schedule_updated = update(schedule_original=schedule_normalized, 
                               do_order=True, 
                               do_pre_dist=True, 
-                              do_productivity=True, 
+                              do_productivity=False,
                               do_compress=True,
                               save_log=True)
 
