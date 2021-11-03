@@ -175,16 +175,24 @@ def find_influence_locations(location_list, current_location, activity_code):
                 if comparing_location == current_location:
                     continue
                 else:
+
+
+
+                    ## 거리 계산하는 코드는 여기에 작성하시면 됩니다.
                     distance = navifunc.euclidean_distance(current_location.split('_')[:2], comparing_location.split('_')[:2])
+                    ##
+
+
                     if distance <= pre_dist:
                         influenced_locations.append(comparing_location)
     except KeyError:
-        # print('Please add {} to activity_table.xlsx and run init.py again!!'.format(activity_code))
         pass
 
     return influenced_locations
 
 def check_pre_dist(schedule, location, day, activity_code):
+    global activity_book
+
     location_list = list(schedule.keys())
     influenced_locations = find_influence_locations(location_list=location_list, current_location=location, activity_code=activity_code)
 
@@ -202,26 +210,54 @@ def check_pre_dist(schedule, location, day, activity_code):
             elif existing_activity_code == activity_code:
                 continue
             else:
-                existing_activity_codes.append(existing_activity_code)
+                existing_activity_codes.append((existing_activity_code, influenced_location))
         except KeyError:
             continue
 
-    if existing_activity_codes:
-        return True
-    else:
+    if not existing_activity_codes:
         return False
+    else:
+        target_locations = []
+        for existing_activity_code, influenced_location in existing_activity_codes:
+
+
+            ## 두 activity_code 사이의 순서를 확인하는 코드입니다. 이걸 활용하시면 선행/후행 작업을 판단할 수 있습니다.
+            ## activity_code1이 activity_code2보다 선행되어야 하는 작업이면 FINE, 반대라면 CONFLICT가 도출됩니다.
+            order_check = navifunc.order_bw_activity(activity_book=activity_book, activity_code1=activity_code, activity_code2=existing_activity_code)
+            if order_check == 'FINE':
+                target_locations.append(influenced_location)
+            elif order_check == 'CONFLICT':
+                target_locations.append(location)
+            else:
+                target_locations.append(location)
+            ##
+
+
+
+        return target_locations
 
 def activity_predecessor_completion_constraint(schedule):
-    schedule_updated = defaultdict(dict)
-    for current_location in schedule:
-        for day, activity_code in schedule[current_location].items():
-            if check_pre_dist(schedule=schedule, location=current_location, day=day, activity_code=activity_code):
-                schedule_updated = deepcopy(push_workdays_single_location(schedule=schedule, target_location=current_location, after=day))
-                return schedule_updated
+    schedule_updated = deepcopy(schedule)
+    daily_work_plan = navifunc.build_daily_work_plan(schedule_updated)
+    
+    for day in sorted(daily_work_plan.keys(), reverse=False):
+        for location, activity_code in daily_work_plan[day].items():
+            target_locations = check_pre_dist(schedule=schedule_updated, location=location, day=day, activity_code=activity_code)
+            if target_locations == False:
+                pass
             else:
-                continue
+                for target_location in target_locations:
 
-    return schedule
+
+                    ## 스케줄을 변경하는 코드입니다.
+                    ## 변경하려는 스케줄(schedule_updated), 변경하려는 위치(target_location), 언제 이후로 변경할 것인지(after)를 설정하면
+                    ## 그 위치에서 그 날 이후로 모든 작업을 1day씩 미는 코드입니다.
+                    ## 위의 check_pre_dist 함수를 통해 target_location과 after 값을 찾으시면 됩니다.
+                    schedule_updated = deepcopy(push_workdays_single_location(schedule=schedule_updated, target_location=target_location, after=day))
+                    ##
+
+
+    return schedule_updated
 
 
 ## Activity Productivity Constraint
@@ -309,7 +345,7 @@ def update(schedule_original, do_order, do_pre_dist, do_productivity, do_compres
         if do_pre_dist:
             schedule_updated = deepcopy(activity_predecessor_completion_constraint(schedule_updated))
             if save_log:
-                naviio.schedule2xlsx(schedule_updated, fname='C-{}/I-{:04d}_02-pre_dist.xlsx'.format(case_id, iteration), verbose=False)
+                naviio.schedule2xlsx(schedule_updated, fname='C-{}/I-{:04d}_02-predist.xlsx'.format(case_id, iteration), verbose=False)
             else:
                 pass
         else:
@@ -381,4 +417,5 @@ if __name__ == '__main__':
         pass
 
     ## Print schedule
-    # navifunc.print_schedule(schedule=schedule_updated)
+    # navifunc.print_work_layout(schedule=schedule_updated)
+    navifunc.print_work_plan(schedule=schedule_updated)
