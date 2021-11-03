@@ -371,7 +371,7 @@ if __name__ == '__main__':
                               do_order=True, 
                               do_pre_dist=True, 
                               do_productivity=True, 
-                              do_compress=False, 
+                              do_compress=True,
                               save_log=True)
 
     ## Export schedule
