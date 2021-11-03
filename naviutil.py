@@ -108,8 +108,8 @@ class NaviFunc:
         activity1 = activity_book[activity_code1]
         activity2 = activity_book[activity_code2]
 
-        consistency1 = activity1.check_order_consistency(activity2.code)
-        consistency2 = activity2.check_order_consistency(activity1.code)
+        consistency1 = self.check_order_consistency(activity1, activity2)
+        consistency2 = self.check_order_consistency(activity2, activity1)
         STATUS = None
 
         if all([(consistency1=='FINE'), (consistency2=='FINE')]):
@@ -311,7 +311,7 @@ class NaviFunc:
 
         return work_layout
 
-    def print_schedule(self, schedule, timesleep=1):
+    def print_work_layout(self, schedule, timesleep=1):
         work_layout = self.assign_activity_to_grid(schedule)
         for day in sorted(work_layout.keys(), reverse=False):
             time.sleep(timesleep)
@@ -319,5 +319,23 @@ class NaviFunc:
             print('Work Layout: (Day: {})'.format(day))
             for flr in sorted(work_layout[day].keys(), reverse=False):
                 print('--------------------------------------------------')
-                print('Floor: {}'.format(flr))
                 print(work_layout[day][flr])
+
+    def print_work_plan(self, schedule):
+        location_list = sorted(schedule.keys())
+        daily_work_plan = self.build_daily_work_plan(schedule=schedule)
+
+        print('--------------------------------------------------')
+        print('  | day   '+'  '.join(location_list)+'\n')
+
+        for day in sorted(daily_work_plan.keys()):
+            daily_works = []
+            for location in location_list:
+                try:
+                    activity_code = daily_work_plan[day][location]
+                except KeyError:
+                    activity_code = '------'
+
+                daily_works.append(activity_code)
+
+            print('  |  {:3} '.format(day)+' '.join(daily_works))
