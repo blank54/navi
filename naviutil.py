@@ -107,17 +107,24 @@ class NaviFunc:
 
         activity1 = activity_book[activity_code1]
         activity2 = activity_book[activity_code2]
-
-        consistency1 = self.check_order_consistency(activity1, activity2)
-        consistency2 = self.check_order_consistency(activity2, activity1)
         STATUS = None
-
-        if all([(consistency1=='FINE'), (consistency2=='FINE')]):
-            STATUS = 'FINE'
-        elif any([(consistency1=='CONFLICT'), (consistency2=='CONFLICT')]):
-            STATUS = 'CONFLICT'
+        # consistency1 = self.check_order_consistency(activity1, activity2)
+        if activity_code2 in activity_book[activity_code1].predecessor:
+            STATUS = 'TO_BE_MOVED'
+        elif activity_code1 in activity_book[activity_code2].predecessor:
+            STATUS = 'PASS'
         else:
-            STATUS = 'IRRELEVANT'
+            STATUS = 'PASS'
+        # consistency2 = self.check_order_consistency(activity2, activity1)
+
+
+        # if all([(consistency1=='FINE'), (consistency2=='FINE')]):
+        # if consistency1 == 'FINE':
+        #     STATUS = 'PASS'
+        # elif consistency1=='CONFLICT':
+        #     STATUS = 'TO_BE_MOVED'
+        # else:
+        #     STATUS = 'IRRELEVANT'
 
         return STATUS
 
@@ -174,32 +181,35 @@ class NaviFunc:
 
         return fines, irrelevants, conflicts, errors
 
-    def check_order_consistency(self, activity_code1, activity_code2):
-        '''
-        Attributes
-        ----------
-        activity_code2 : str
-            | An activity code of which order between the current activity is to be checked.
-        '''
+    # def check_order_consistency(self, activity_code1, activity_code2):
+    #     '''
+    #     Attributes
+    #     ----------
+    #     activity_code2 : str
+    #         | An activity code of which order between the current activity is to be checked.
+    #     '''
+    #
+    #     is_predecessor = False
+    #     is_successor = False
+    #
+    #     if activity_code2 in activity_code1.predecessor:
+    #         return 'CONFLICT'
+    #         # is_predecessor = True
+    #     else:
+    #         return 'FINE'
+            # pass
+        # if activity_code2 in activity_code1.successor:
+        #     is_successor = True
+        # else:
+        #     pass
 
-        is_predecessor = False
-        is_successor = False
-
-        if activity_code2 in activity_code1.predecessor:
-            is_predecessor = True
-        else:
-            pass
-        if activity_code2 in activity_code1.successor:
-            is_successor = True
-        else:
-            pass
-
-        if all((is_predecessor, is_successor)):
-            return 'CONFLICT'
-        elif any((is_predecessor, is_successor)):
-            return 'FINE'
-        else:
-            return 'ABSENT'
+        # if all((is_predecessor, is_successor)):
+        # if is_predecessor == True :
+        #     return 'FINE'
+        # elif is_successor == True:
+        #     return 'CONFLICT'
+        # else:
+        #     return 'ABSENT'
 
     def check_productivity_overload(self, activity_book, activity_code, count):
         try:
