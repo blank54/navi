@@ -109,9 +109,9 @@ class NaviFunc:
         activity2 = activity_book[activity_code2]
         STATUS = None
         # consistency1 = self.check_order_consistency(activity1, activity2)
-        if activity_code2 in activity_book[activity_code1].predecessor:
+        if activity_code2 in activity1.predecessor:
             STATUS = 'TO_BE_MOVED'
-        elif activity_code1 in activity_book[activity_code2].predecessor:
+        elif activity_code1 in activity2.predecessor:
             STATUS = 'PASS'
         else:
             STATUS = 'PASS'
