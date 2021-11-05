@@ -73,6 +73,19 @@ def push_workdays_single_location(schedule, target_location, after):
             schedule_updated[location][after] = '------'
     return schedule_updated
 
+def push_workdays_single_location_pre_dist(schedule, target_location, after):
+    schedule_updated = defaultdict(dict)
+    for location in schedule:
+         if location == target_location:
+            for day, activity_code in schedule[location].items():
+                if day >= after:
+                    schedule_updated[location][day + 1] = activity_code
+                else:
+                    schedule_updated[location][day] = activity_code
+            schedule_updated[location][after] = '------'
+        else:
+            schedule_updated[location] = schedule[location]
+    return schedule_updated
 
 ## Activity Order Constraint
 def check_activity_order_within_work(local_schedule, activity_code):
@@ -159,9 +172,6 @@ def activity_order_constraint(schedule, verbose_local=False, verbose_conflict=Fa
     return schedule_updated
 
 
-# 작업별 순서에 정수값을 줄 수는 없을까요, 10000, 5자리 숫자 중 100의자리 이상은 선후관계 따라 부여
-# 10의 자리 수는 선후관계가 없는 것들끼리 이름순 등 랜덤
-
 ## Activity Predecessor Distance Constraint
 def find_influence_locations(location_list, current_location, activity_code):
     influenced_locations = []
@@ -171,20 +181,75 @@ def find_influence_locations(location_list, current_location, activity_code):
         if pre_dist == 'NA':
             return []
         else:
-            for comparing_location in schedule:
-                if comparing_location == current_location:
-                    continue
-                else:
+            # for comparing_location in schedule:
+            #     if comparing_location == current_location:
+            #         continue
+            #     else:
+            #         for location in current_location:
+            x, y, z = current_location.split("_")
+            pre_dist1 = pre_dist
+            pre_dist2 = pre_dist
+            pre_dist_z1 = 1
+            pre_dist_z2 = int(-1)
+            x = int(x)
+            y = int(y)
+            z = int(z)
+            pre_dist_location_x_list = []
+            pre_dist_location_y_list = []
+            pre_dist_location_z_list = [z]
+            while pre_dist1 > 0:
+                pred_dist_x1 = x + pre_dist1
+                pre_dist_location_x_list.append(pred_dist_x1)
+                pred_dist_y1 = y + pre_dist1
+                pre_dist_location_y_list.append(pred_dist_y1)
+                pre_dist1 = pre_dist1 - 1
+
+            while pre_dist2 >= 0:
+                pred_dist_x2 = x - pre_dist2
+                pred_dist_y2 = y - pre_dist2
+                if pred_dist_x2 > 0:
+                    pre_dist_location_x_list.append(pred_dist_x2)
+                if pred_dist_y2 > 0:
+                    pre_dist_location_y_list.append(pred_dist_y2)
+                pre_dist2 = pre_dist2 - 1
+
+            # if 'D' in check_pre_dist_act:
+            #     pred_dist_z = z + pre_dist_z1
+            #     pre_dist_location_z_list.append(pred_dist_z)
+            # elif 'S' in check_pre_dist_act:
+            #     pred_dist_z = z + pre_dist_z2
+            #     pre_dist_location_z_list.append(pred_dist_z)
+
+        # making influence grid
+        # 특정 작업의 영향거리 내 Location만들기1
+
+        a_influence_locations = []
+        for x in pre_dist_location_x_list:
+            x = str(x)
+            for y in pre_dist_location_y_list:
+                y = str(y)
+                for z in pre_dist_location_z_list:
+                    z = str(z)
+                    influence_x_y_z = []
+                    influence_x_y_z.append(x)
+                    influence_x_y_z.append(y)
+                    influence_x_y_z.append(z)
+                    influence_location = '_'.join(influence_x_y_z)
+                    a_influence_locations.append(influence_location)
+
+        # 자신의 그리드 제거
+        if current_location in a_influence_locations:
+            a_influence_locations.remove(current_location)
+
+        # 존재하는 그리드만 남기기
+        # influenced_locations = []
+        for location in schedule.keys():
+            if location in a_influence_locations:
+                influenced_locations.append(location)
+            else:
+                continue
 
 
-
-                    ## 거리 계산하는 코드는 여기에 작성하시면 됩니다.
-                    distance = navifunc.euclidean_distance(current_location.split('_')[:2], comparing_location.split('_')[:2])
-                    ##
-
-
-                    if distance <= pre_dist:
-                        influenced_locations.append(comparing_location)
     except KeyError:
         pass
 
@@ -192,7 +257,7 @@ def find_influence_locations(location_list, current_location, activity_code):
 
 def check_pre_dist(schedule, location, day, activity_code):
     global activity_book
-
+    target_locations = []
     location_list = list(schedule.keys())
     influenced_locations = find_influence_locations(location_list=location_list, current_location=location, activity_code=activity_code)
 
@@ -215,25 +280,24 @@ def check_pre_dist(schedule, location, day, activity_code):
             continue
 
     if not existing_activity_codes:
+
         return False
     else:
-        target_locations = []
+        # target_locations = []
         for existing_activity_code, influenced_location in existing_activity_codes:
-
 
             ## 두 activity_code 사이의 순서를 확인하는 코드입니다. 이걸 활용하시면 선행/후행 작업을 판단할 수 있습니다.
             ## activity_code1이 activity_code2보다 선행되어야 하는 작업이면 FINE, 반대라면 CONFLICT가 도출됩니다.
             order_check = navifunc.order_bw_activity(activity_book=activity_book, activity_code1=activity_code, activity_code2=existing_activity_code)
-            if order_check == 'FINE':
-                target_locations.append(influenced_location)
-            elif order_check == 'CONFLICT':
+            if order_check == 'PASS':
+                continue
+            elif order_check == 'TO_BE_MOVED':
                 target_locations.append(location)
             else:
-                target_locations.append(location)
+                continue
             ##
 
-
-
+        target_locations = set(target_locations)
         return target_locations
 
 def activity_predecessor_completion_constraint(schedule):
@@ -247,15 +311,7 @@ def activity_predecessor_completion_constraint(schedule):
                 pass
             else:
                 for target_location in target_locations:
-
-
-                    ## 스케줄을 변경하는 코드입니다.
-                    ## 변경하려는 스케줄(schedule_updated), 변경하려는 위치(target_location), 언제 이후로 변경할 것인지(after)를 설정하면
-                    ## 그 위치에서 그 날 이후로 모든 작업을 1day씩 미는 코드입니다.
-                    ## 위의 check_pre_dist 함수를 통해 target_location과 after 값을 찾으시면 됩니다.
-                    schedule_updated = deepcopy(push_workdays_single_location(schedule=schedule_updated, target_location=target_location, after=day))
-                    ##
-
+                    schedule_updated = deepcopy(push_workdays_single_location_pre_dist(schedule=schedule_updated, target_location=target_location, after=day))
 
     return schedule_updated
 
@@ -406,8 +462,8 @@ if __name__ == '__main__':
     schedule_updated = update(schedule_original=schedule_normalized, 
                               do_order=True, 
                               do_pre_dist=True, 
-                              do_productivity=True, 
-                              do_compress=True,
+                              do_productivity=False,
+                              do_compress=False,
                               save_log=True)
 
     ## Export schedule
