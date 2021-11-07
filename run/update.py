@@ -334,6 +334,7 @@ def activity_productivity_constraint(schedule):
         activity_counter = defaultdict(list)
         for location, activity_code in daily_work_plan[day].items():
             activity_counter[activity_code].append(location)
+            pass
 
         for activity_code, location_list in activity_counter.items():
             count = len(location_list)
@@ -341,8 +342,13 @@ def activity_productivity_constraint(schedule):
                 num_overloaded = (count-activity_book[activity_code].productivity)
                 for target_location in location_list[:num_overloaded]:
                     schedule_updated = deepcopy(push_workdays_single_location(schedule=schedule_updated, target_location=target_location, after=day))
+                break
             else:
-                pass
+                continue
+            break
+        else:
+            continue
+        break
 
     return schedule_updated
 
