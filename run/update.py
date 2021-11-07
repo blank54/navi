@@ -76,7 +76,7 @@ def push_workdays_single_location(schedule, target_location, after):
 def push_workdays_single_location_pre_dist(schedule, target_location, after):
     schedule_updated = defaultdict(dict)
     for location in schedule:
-         if location == target_location:
+        if location == target_location:
             for day, activity_code in schedule[location].items():
                 if day >= after:
                     schedule_updated[location][day + 1] = activity_code
@@ -264,7 +264,7 @@ def check_pre_dist(schedule, location, day, activity_code):
     if influenced_locations:
         pass
     else:
-        return False
+        return []
 
     existing_activity_codes = []
     for influenced_location in influenced_locations:
@@ -281,7 +281,7 @@ def check_pre_dist(schedule, location, day, activity_code):
 
     if not existing_activity_codes:
 
-        return False
+        return []
     else:
         # target_locations = []
         for existing_activity_code, influenced_location in existing_activity_codes:
@@ -303,15 +303,23 @@ def check_pre_dist(schedule, location, day, activity_code):
 def activity_predecessor_completion_constraint(schedule):
     schedule_updated = deepcopy(schedule)
     daily_work_plan = navifunc.build_daily_work_plan(schedule_updated)
-    
-    for day in sorted(daily_work_plan.keys(), reverse=False):
-        for location, activity_code in daily_work_plan[day].items():
+
+    for location in sorted(schedule_updated.keys()):
+        for day, activity_code in sorted(schedule_updated[location].items(), key=lambda x:x[0]):
             target_locations = check_pre_dist(schedule=schedule_updated, location=location, day=day, activity_code=activity_code)
-            if target_locations == False:
-                pass
-            else:
+            if target_locations:
                 for target_location in target_locations:
                     schedule_updated = deepcopy(push_workdays_single_location_pre_dist(schedule=schedule_updated, target_location=target_location, after=day))
+                    break
+                else:
+                    continue
+                break
+            else:
+                continue
+            break
+        else:
+            continue
+        break
 
     return schedule_updated
 
