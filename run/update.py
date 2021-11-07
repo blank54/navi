@@ -463,6 +463,9 @@ if __name__ == '__main__':
 
     schedule = import_schedule(case_id)
     schedule_normalized = normallize_duplicated_activity(schedule)
+    print('============================================================')
+    print('Initial schedule')
+    navifunc.print_work_plan(schedule=schedule_normalized)
 
     ## Update schedule
     print('============================================================')
@@ -470,7 +473,7 @@ if __name__ == '__main__':
     schedule_updated = update(schedule_original=schedule_normalized, 
                               do_order=True, 
                               do_pre_dist=True, 
-                              do_productivity=False,
+                              do_productivity=True,
                               do_compress=False,
                               save_log=True)
 
@@ -481,5 +484,7 @@ if __name__ == '__main__':
         pass
 
     ## Print schedule
+    print('============================================================')
     # navifunc.print_work_layout(schedule=schedule_updated)
+    print('Updated schedule')
     navifunc.print_work_plan(schedule=schedule_updated)
