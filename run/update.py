@@ -408,6 +408,7 @@ def update(schedule_original, do_order, do_pre_dist, do_productivity, do_compres
                 naviio.schedule2xlsx(schedule_updated, fname='C-{}/I-{:04d}_01-order.xlsx'.format(case_id, iteration), verbose=False)
             else:
                 pass
+                # continue
         else:
             pass
 
@@ -418,6 +419,7 @@ def update(schedule_original, do_order, do_pre_dist, do_productivity, do_compres
                 naviio.schedule2xlsx(schedule_updated, fname='C-{}/I-{:04d}_02-predist.xlsx'.format(case_id, iteration), verbose=False)
             else:
                 pass
+                # continue
         else:
             pass
 
@@ -428,6 +430,7 @@ def update(schedule_original, do_order, do_pre_dist, do_productivity, do_compres
                 naviio.schedule2xlsx(schedule_updated, fname='C-{}/I-{:04d}_03-productivity.xlsx'.format(case_id, iteration), verbose=False)
             else:
                 pass
+                # continue
         else:
             pass
 
@@ -438,6 +441,7 @@ def update(schedule_original, do_order, do_pre_dist, do_productivity, do_compres
                 naviio.schedule2xlsx(schedule_updated, fname='C-{}/I-{:04d}_04-compressed.xlsx'.format(case_id, iteration), verbose=False)
             else:
                 pass
+                # continue
         else:
             pass
 
@@ -478,8 +482,8 @@ if __name__ == '__main__':
     print('Update schedule')
     schedule_updated = update(schedule_original=schedule_normalized, 
                               do_order=True, 
-                              do_pre_dist=True, 
-                              do_productivity=True,
+                              do_pre_dist=True,
+                              do_productivity=True                              ,
                               do_compress=False,
                               save_log=True)
 
