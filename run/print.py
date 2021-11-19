@@ -29,6 +29,8 @@ if __name__ == '__main__':
     fdir = os.path.sep.join((navipath.fdir_schedule, 'C-{}'.format(case_id)))
     flist = [fname for fname in os.listdir(fdir) if fname.startswith('I')]
 
+    print('\n'*30)
+    time.sleep(2)
     for fname in sorted(flist):
         iteration_part, constraint_part = fname.replace('.xlsx', '').split('_')
         iteration = iteration_part.split('-')[-1]
@@ -37,7 +39,7 @@ if __name__ == '__main__':
         fpath = os.path.sep.join((fdir, fname))
         schedule = naviio.xlsx2schedule(activity_book, fpath=fpath)
 
-        print('\n\n\n\n============================================================')
+        print('\n'*30+'============================================================')
         print('Iteration: {:4} / Constraint: {}'.format(iteration, constraint))
         navifunc.print_work_plan(schedule=schedule)
         time.sleep(1)

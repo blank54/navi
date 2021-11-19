@@ -13,9 +13,9 @@ navipath = NaviPath()
 navifunc = NaviFunc()
 naviio = NaviIO()
 
+import time
 import shutil
 import itertools
-from time import time
 import pandas as pd
 import pickle as pk
 from copy import deepcopy
@@ -388,7 +388,7 @@ def compress_schedule(schedule):
 
 
 ## Update schedule
-def update(schedule_original, do_order, do_pre_dist, do_productivity, do_compress, save_log):
+def update(schedule_original, do_order, do_pre_dist, do_productivity, do_compress, save_log, sleep_for_verbose):
     global case_id
 
     times = []
@@ -398,7 +398,7 @@ def update(schedule_original, do_order, do_pre_dist, do_productivity, do_compres
 
     while True:
         print('\r  | Iteration: {:,d}'.format(iteration), end='')
-        start_time = time()
+        start_time = time.time()
         schedule_before = deepcopy(schedule_updated)
         
         ## Activity Order Constraint
@@ -450,7 +450,11 @@ def update(schedule_original, do_order, do_pre_dist, do_productivity, do_compres
             break
         else:
             iteration += 1
-            end_time = time()
+            if sleep_for_verbose:
+                time.sleep(1)
+            else:
+                pass
+            end_time = time.time()
             iteration_time = end_time - start_time
             running_time += iteration_time
             times.append((iteration, iteration_time))
@@ -473,19 +477,17 @@ if __name__ == '__main__':
 
     schedule = import_schedule(case_id)
     schedule_normalized = normallize_duplicated_activity(schedule)
-    print('============================================================')
-    print('Initial schedule')
-    navifunc.print_work_plan(schedule=schedule_normalized)
 
     ## Update schedule
     print('============================================================')
     print('Update schedule')
     schedule_updated = update(schedule_original=schedule_normalized, 
                               do_order=True, 
-                              do_pre_dist=True,
-                              do_productivity=True                              ,
-                              do_compress=False,
-                              save_log=True)
+                              do_pre_dist=True, 
+                              do_productivity=True,
+                              do_compress=True,
+                              save_log=True,
+                              sleep_for_verbose=True)
 
     ## Export schedule
     try:
@@ -495,6 +497,9 @@ if __name__ == '__main__':
 
     ## Print schedule
     print('============================================================')
-    # navifunc.print_work_layout(schedule=schedule_updated)
+    print('Initial schedule')
+    navifunc.print_work_plan(schedule=schedule_normalized)
+
+    print('============================================================')
     print('Updated schedule')
     navifunc.print_work_plan(schedule=schedule_updated)
